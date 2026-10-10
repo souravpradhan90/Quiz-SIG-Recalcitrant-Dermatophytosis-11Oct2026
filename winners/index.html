@@ -131,33 +131,39 @@
       const stateBadge = document.getElementById('quiz-state-badge');
       const endBtn = document.getElementById('end-quiz-btn');
       
-      if (data.state === 'ACTIVE') {
-        stateBadge.className = 'status-badge state-active';
-        stateBadge.innerText = 'Active (In Progress)';
-        endBtn.style.display = 'inline-block';
-      } else if (data.state === 'TIE_BREAKER') {
-        stateBadge.className = 'status-badge state-tb';
-        stateBadge.innerText = 'Tie-Breaker In Progress';
-        endBtn.style.display = 'none';
-      } else {
-        stateBadge.className = 'status-badge state-closed';
-        stateBadge.innerText = 'Finalized (Closed)';
-        endBtn.style.display = 'none';
+      // Update Quiz State Badge if the element exists
+      if (stateBadge) {
+        if (data.state === 'ACTIVE') {
+          stateBadge.className = 'status-badge state-active';
+          stateBadge.innerText = 'Active (In Progress)';
+          if (endBtn) endBtn.style.display = 'inline-block';
+        } else if (data.state === 'TIE_BREAKER') {
+          stateBadge.className = 'status-badge state-tb';
+          stateBadge.innerText = 'Tie-Breaker In Progress';
+          if (endBtn) endBtn.style.display = 'none';
+        } else {
+          stateBadge.className = 'status-badge state-closed';
+          stateBadge.innerText = 'Finalized (Closed)';
+          if (endBtn) endBtn.style.display = 'none';
+        }
       }
 
       const podium = document.getElementById('podium-container');
       const tbody = document.getElementById('leaderboard-body');
-      podium.innerHTML = '';
-      tbody.innerHTML = '';
+      if (podium) podium.innerHTML = '';
+      if (tbody) tbody.innerHTML = '';
 
-      const list = data.participants || [];
+      // Extract participants array regardless of whether backend returns array or wrapper object
+      const list = Array.isArray(data) ? data : (data && Array.isArray(data.participants) ? data.participants : []);
+
       if (list.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No submissions recorded yet.</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No submissions recorded yet.</td></tr>';
         return;
       }
 
       list.forEach(p => {
-        if (p.rank <= 3) {
+        // Render Top 3 Podium Cards
+        if (podium && p.rank <= 3) {
           const card = document.createElement('div');
           card.className = `podium-card rank-${p.rank}`;
           const crown = p.rank === 1 ? '👑' : (p.rank === 2 ? '🥈' : '🥉');
@@ -174,16 +180,19 @@
           podium.appendChild(card);
         }
 
-        const tr = document.createElement('tr');
-        const tbTime = p.tbTimeSec !== null ? `${p.tbTimeSec}s (${p.tbCorrect ? '✔' : '✖'})` : '-';
-        tr.innerHTML = `
-          <td class="rank-col">#${p.rank}</td>
-          <td><strong>${p.name}</strong></td>
-          <td>${p.clinic} (${p.place})</td>
-          <td><strong style="color:#38bdf8;">${p.score}</strong></td>
-          <td>${tbTime}</td>
-        `;
-        tbody.appendChild(tr);
+        // Render Table Row
+        if (tbody) {
+          const tr = document.createElement('tr');
+          const tbTime = p.tbTimeSec !== null ? `${p.tbTimeSec}s (${p.tbCorrect ? '✔' : '✖'})` : '-';
+          tr.innerHTML = `
+            <td class="rank-col">#${p.rank}</td>
+            <td><strong>${p.name}</strong></td>
+            <td>${p.clinic} (${p.place})</td>
+            <td><strong style="color:#38bdf8;">${p.score}</strong></td>
+            <td>${tbTime}</td>
+          `;
+          tbody.appendChild(tr);
+        }
       });
     }
 
