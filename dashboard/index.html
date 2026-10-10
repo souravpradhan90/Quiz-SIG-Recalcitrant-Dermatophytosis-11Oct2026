@@ -80,21 +80,17 @@
     let localTimer = null;
     let timerSec = 30;
 
-    // Verbatim text from slides
     const SLIDES = [
-      // Slide 0: Title Slide
       {
         type: "TITLE",
         title: "SIG Recalcitrant\nDermatophytosis Quiz",
         quizMaster: "Dr Sheenam Hooda",
         date: "11 October 2026"
       },
-      // Slide 1: How the quiz works + QR Code
       {
         type: "RULES",
         qr: "https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=https://quiz.samvedi.com/derma/"
       },
-      // Slide 2: Q1
       {
         type: "QUESTION",
         num: "01 / 20",
@@ -102,7 +98,6 @@
         image: "https://lh3.googleusercontent.com/d/1nV2T5lqk_xAuYAqHl6aUeEtLCWbW4ycv",
         options: ["Pig tail sign", "Tea pot lid sign", "Sandwich sign", "Hamburger sign"]
       },
-      // Slide 3: Q2
       {
         type: "QUESTION",
         num: "02 / 20",
@@ -110,7 +105,6 @@
         image: "https://lh3.googleusercontent.com/d/1TfMmXqBzpn08r38FmEgfF6W1KUgJ3ipp",
         options: ["Herpes circinatus", "Trichophytic granuloma", "Tokelau", "Kerion celsi"]
       },
-      // Slide 4: Q3
       {
         type: "QUESTION",
         num: "03 / 20",
@@ -122,14 +116,12 @@
           "Dissemination may be seen to lymph nodes and other organs"
         ]
       },
-      // Slide 5: Q4
       {
         type: "QUESTION",
         num: "04 / 20",
         question: "Positive hair perforation test is seen with which of the following organisms?",
         options: ["M. canis", "T. rubrum", "M. audouinii", "M. equinum"]
       },
-      // Slide 6: Q5
       {
         type: "QUESTION",
         num: "05 / 20",
@@ -141,7 +133,6 @@
           "Trials suggest utility in recalcitrant onychomycosis"
         ]
       },
-      // Slide 7: Q6
       {
         type: "QUESTION",
         num: "06 / 20",
@@ -153,14 +144,12 @@
           "Congo red stains β-D-glucans"
         ]
       },
-      // Slide 8: Q7
       {
         type: "QUESTION",
         num: "07 / 20",
         question: "Tinea gladiatorum is most commonly associated with which dermatophyte species?",
         options: ["Trichophyton tonsurans", "Microsporum gypseum", "Trichophyton schoenleinii", "Microsporum audouinii"]
       },
-      // Slide 9: Q8
       {
         type: "QUESTION",
         num: "08 / 20",
@@ -172,7 +161,6 @@
           "All of the above"
         ]
       },
-      // Slide 10: Q9
       {
         type: "QUESTION",
         num: "09 / 20",
@@ -184,7 +172,6 @@
           "Serum levels may increase when taken along with antacids"
         ]
       },
-      // Slide 11: Q10
       {
         type: "QUESTION",
         num: "10 / 20",
@@ -196,7 +183,6 @@
           "Inhibition of Calcineurin signalling"
         ]
       },
-      // Slide 12: Q11
       {
         type: "QUESTION",
         num: "11 / 20",
@@ -208,7 +194,6 @@
           "All of the above"
         ]
       },
-      // Slide 13: Q12
       {
         type: "QUESTION",
         num: "12 / 20",
@@ -216,14 +201,12 @@
         image: "https://lh3.googleusercontent.com/d/1dxN-Pkha0hHIOUwrjNToabN7-EfO2Fyk",
         options: ["Ruin appearance", "Inverse triangle sign", "Aurora borealis appearance", "Contrast halo sign"]
       },
-      // Slide 14: Q13
       {
         type: "QUESTION",
         num: "13 / 20",
         question: "All of the following topical antifungals are category B drugs in pregnancy, except:",
         options: ["Terbinafine", "Ciclopirox olamine", "Clotrimazole", "Selenium sulphide"]
       },
-      // Slide 15: Q14
       {
         type: "QUESTION",
         num: "14 / 20",
@@ -235,7 +218,6 @@
           "All of the above"
         ]
       },
-      // Slide 16: Q15
       {
         type: "QUESTION",
         num: "15 / 20",
@@ -243,7 +225,6 @@
         image: "https://lh3.googleusercontent.com/d/1S-Qd9MDCH9GTqofdBd9JqlGi2Dc4PL1C",
         options: ["Tinea capitis", "Tinea faciei", "Tinea corporis", "Tinea unguium"]
       },
-      // Slide 17: Q16
       {
         type: "QUESTION",
         num: "16 / 20",
@@ -255,7 +236,6 @@
           "Pre-treatment is required with MB"
         ]
       },
-      // Slide 18: Q17
       {
         type: "QUESTION",
         num: "17 / 20",
@@ -267,7 +247,6 @@
           "Interdigital type of tinea pedis"
         ]
       },
-      // Slide 19: Q18
       {
         type: "QUESTION",
         num: "18 / 20",
@@ -279,7 +258,6 @@
           "Endothrix and T. tonsurans"
         ]
       },
-      // Slide 20: Q19
       {
         type: "QUESTION",
         num: "19 / 20",
@@ -287,7 +265,6 @@
         image: "https://lh3.googleusercontent.com/d/1kLhPN2SmhEaHjCWf7wZap5C6oHWoX7Sg",
         options: ["T. mentagrophytes", "T. tonsurans", "T. violaceum", "T. rubrum"]
       },
-      // Slide 21: Q20
       {
         type: "QUESTION",
         num: "20 / 20",
@@ -299,15 +276,12 @@
           "All of the above"
         ]
       },
-      // Slide 22: Answer Key Slide
       {
         type: "ANSWER_KEY"
       },
-      // Slide 23: Live Leaderboard / Standings
       {
         type: "LEADERBOARD"
       },
-      // Slide 24: Tie-Breaker Slide
       {
         type: "TIE_BREAKER",
         question: "Which are the novel composition of Silver available, which can be used as an adjuvant to antifungal in the management of recalcitrant dermatophytosis?",
@@ -318,11 +292,17 @@
           "Silversol, Vitamin E & Hyaluronic acid"
         ]
       },
-      // Slide 25: Thank You Slide
       {
         type: "THANK_YOU"
       }
     ];
+
+    function sendBackendCommand(params) {
+      const url = `${SCRIPT_URL}?${params}&t=${Date.now()}`;
+      // Image beacon avoids CORS cross-origin blocking completely
+      const img = new Image();
+      img.src = url;
+    }
 
     function renderSlide(index) {
       clearInterval(localTimer);
@@ -431,8 +411,7 @@
         `;
       }
 
-      // Notify backend of slide change
-      fetch(`${SCRIPT_URL}?action=setSlide&index=${index}`).catch(console.error);
+      sendBackendCommand(`action=setSlide&index=${index}`);
     }
 
     function openAnsweringWindow() {
@@ -441,7 +420,7 @@
       openBtn.innerText = "Answering Open...";
       timerSec = 30;
 
-      fetch(`${SCRIPT_URL}?action=startAnswering&index=${currentSlide}`).catch(console.error);
+      sendBackendCommand(`action=startAnswering&index=${currentSlide}`);
 
       localTimer = setInterval(() => {
         timerSec--;
@@ -497,14 +476,12 @@
         });
     }
 
-    // Keyboard Arrow Keys navigation
     window.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowRight' || e.key === 'PageDown') nextSlide();
       else if (e.key === 'ArrowLeft' || e.key === 'PageUp') prevSlide();
       else if (e.key === ' ' && !document.getElementById('open-btn').disabled) openAnsweringWindow();
     });
 
-    // Initial render
     renderSlide(0);
   </script>
 </body>
