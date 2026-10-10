@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Master Leaderboard | Dr. Sheenam Hooda</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #0f172a; color: #f8fafc; padding: 28px 16px; }
+    .container { max-width: 900px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    h1 { font-size: 24px; color: #38bdf8; }
+    .btn-refresh { background: #0284c7; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
+    .btn-refresh:hover { background: #0369a1; }
+    
+    /* Podium Highlights */
+    .podium { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 32px; }
+    .podium-card { background: #1e293b; border-radius: 12px; padding: 20px; border: 2px solid transparent; text-align: center; }
+    .rank-1 { border-color: #fbbf24; background: linear-gradient(180deg, #1e293b 0%, rgba(251, 191, 36, 0.12) 100%); }
+    .rank-2 { border-color: #94a3b8; background: linear-gradient(180deg, #1e293b 0%, rgba(148, 163, 184, 0.12) 100%); }
+    .rank-3 { border-color: #b45309; background: linear-gradient(180deg, #1e293b 0%, rgba(180, 83, 9, 0.12) 100%); }
+    
+    .crown { font-size: 32px; margin-bottom: 4px; }
+    .podium-rank { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+    .name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .meta { font-size: 13px; color: #94a3b8; margin-bottom: 12px; }
+    .score-badge { display: inline-block; padding: 4px 14px; border-radius: 999px; font-weight: 700; font-size: 16px; }
+    .rank-1 .score-badge { background: #fbbf24; color: #000; }
+    .rank-2 .score-badge { background: #cbd5e1; color: #000; }
+    .rank-3 .score-badge { background: #d97706; color: #fff; }
+
+    /* Rankings Table */
+    table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 8px; overflow: hidden; }
+    th, td { padding: 12px 16px; text-align: left; font-size: 14px; }
+    th { background: #334155; color: #cbd5e1; font-weight: 600; }
+    tr { border-bottom: 1px solid #334155; }
+    tr:last-child { border-bottom: none; }
+    .rank-col { font-weight: 700; width: 60px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>Leaderboard &amp; Rankings</h1>
+        <p style="font-size: 13px; color: #94a3b8;">SIG Recalcitrant Dermatophytosis Quiz Master Console</p>
+      </div>
+      <button class="btn-refresh" onclick="loadLeaderboard()">↻ Refresh Standings</button>
+    </div>
+
+    <!-- Highlights for Ranks 1, 2, and 3 -->
+    <div id="podium-container" class="podium"></div>
+
+    <!-- Full Rankings Table -->
+    <h2 style="font-size: 18px; margin-bottom: 12px; color: #cbd5e1;">All Participants</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Doctor Name</th>
+          <th>Clinic / Institution</th>
+          <th>Score</th>
+          <th>Tie-Breaker Time</th>
+        </tr>
+      </thead>
+      <tbody id="leaderboard-body">
+        <tr><td colspan="5" style="text-align:center;">Loading standings...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // Paste your exact Apps Script Web App exec URL here
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_p1n14N5lQ94zT39V60Z6i1lM_D-Z0U/exec"; // REPLACE THIS URL WITH YOUR DEPLOYMENT URL
+
+    function loadLeaderboard() {
+      document.getElementById('leaderboard-body').innerHTML = '<tr><td colspan="5" style="text-align:center;">Updating standings...</td></tr>';
+      
+      fetch(`${SCRIPT_URL}?action=getLeaderboard`)
+        .then(res => res.json())
+        .then(data => renderData(data))
+        .catch(err => {
+          console.error(err);
+          document.getElementById('leaderboard-body').innerHTML = `
+            <tr><td colspan="5" style="text-align:center; color:#ef4444;">Failed to load. Verify that SCRIPT_URL is correct and redeployed with access: Anyone.</td></tr>
+          `;
+        });
+    }
+
+    function renderData(list) {
+      const podium = document.getElementById('podium-container');
+      const tbody = document.getElementById('leaderboard-body');
+      podium.innerHTML = '';
+      tbody.innerHTML = '';
+
+      if (!list || list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No submissions recorded yet.</td></tr>';
+        return;
+      }
+
+      list.forEach(p => {
+        // Highlight Ranks 1, 2, and 3
+        if (p.rank <= 3) {
+          const card = document.createElement('div');
+          card.className = `podium-card rank-${p.rank}`;
+          const crown = p.rank === 1 ? '👑' : (p.rank === 2 ? '🥈' : '🥉');
+          const tbText = p.tbTimeSec !== null ? `<div style="font-size:12px; margin-top:8px; color:#fbbf24;">TB: ${p.tbTimeSec}s (${p.tbCorrect ? 'Correct' : 'Wrong'})</div>` : '';
+          
+          card.innerHTML = `
+            <div class="crown">${crown}</div>
+            <div class="podium-rank">Rank #${p.rank}</div>
+            <div class="name">${p.name}</div>
+            <div class="meta">${p.clinic || p.place}</div>
+            <div class="score-badge">${p.score} pts</div>
+            ${tbText}
+          `;
+          podium.appendChild(card);
+        }
+
+        // Table Rows
+        const tr = document.createElement('tr');
+        const tbTime = p.tbTimeSec !== null ? `${p.tbTimeSec}s (${p.tbCorrect ? '✔' : '✖'})` : '-';
+        tr.innerHTML = `
+          <td class="rank-col">#${p.rank}</td>
+          <td><strong>${p.name}</strong></td>
+          <td>${p.clinic} (${p.place})</td>
+          <td><strong style="color:#38bdf8;">${p.score}</strong></td>
+          <td>${tbTime}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    loadLeaderboard();
+  </script>
+</body>
+</html>
