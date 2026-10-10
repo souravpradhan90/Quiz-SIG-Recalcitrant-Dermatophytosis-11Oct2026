@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIG Recalcitrant Dermatophytosis Quiz | Presentation Master</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #004b5c; color: #ffffff; min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between; overflow-x: hidden; }
+
+    /* Main Presentation Stage */
+    .stage { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 24px 100px; text-align: center; }
+    .slide-box { max-width: 1050px; width: 100%; }
+
+    /* Top Subhead */
+    .top-meta { font-size: 15px; font-weight: 700; letter-spacing: 1px; color: #67e8f9; text-transform: uppercase; margin-bottom: 12px; }
+    .q-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 12px; margin-bottom: 24px; }
+    .q-num { font-size: 26px; font-weight: 800; color: #ffffff; }
+    .q-timer-badge { font-size: 24px; font-weight: 800; background: #fee2e2; color: #ef4444; padding: 4px 18px; border-radius: 999px; }
+
+    /* Content Typography */
+    h1.main-title { font-size: 44px; font-weight: 800; line-height: 1.2; margin-bottom: 20px; color: #ffffff; }
+    .q-text { font-size: 28px; font-weight: 600; line-height: 1.35; margin-bottom: 28px; text-align: left; }
+    
+    .media-box { margin: 18px 0 24px; text-align: center; }
+    .media-box img { max-height: 340px; max-width: 100%; border-radius: 12px; border: 3px solid rgba(255,255,255,0.25); background: #ffffff; }
+
+    /* Grid of 4 Options */
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; text-align: left; }
+    .opt-card { background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.25); border-radius: 12px; padding: 18px 22px; font-size: 20px; font-weight: 600; line-height: 1.3; }
+    .opt-card strong { color: #facc15; margin-right: 8px; font-size: 22px; }
+
+    /* Rules Slide Layout */
+    .rules-card { background: rgba(0,0,0,0.2); border-radius: 16px; padding: 32px; max-width: 640px; margin: 0 auto; text-align: left; }
+    .rule-row { display: flex; justify-content: space-between; font-size: 22px; padding: 12px 0; border-bottom: 1px dashed rgba(255,255,255,0.2); }
+    .rule-row:last-child { border-bottom: none; }
+
+    /* Answer Key Table */
+    .key-table { width: 100%; border-collapse: collapse; font-size: 15px; margin-top: 10px; background: rgba(0,0,0,0.25); border-radius: 10px; overflow: hidden; }
+    .key-table th, .key-table td { padding: 8px 12px; border: 1px solid rgba(255,255,255,0.15); text-align: left; }
+    .key-table th { background: rgba(255,255,255,0.15); color: #facc15; font-weight: 700; }
+
+    /* Podium Layout */
+    .podium-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 24px; }
+    .podium-card { background: rgba(0,0,0,0.3); border-radius: 16px; padding: 24px; border: 3px solid transparent; }
+    .p-rank-1 { border-color: #facc15; background: rgba(250, 204, 21, 0.15); }
+    .p-rank-2 { border-color: #cbd5e1; }
+    .p-rank-3 { border-color: #d97706; }
+    .podium-crown { font-size: 40px; margin-bottom: 6px; }
+    .podium-score { font-size: 22px; font-weight: 800; color: #38bdf8; margin-top: 8px; }
+
+    /* Bottom Quiz Master Control Bar */
+    .control-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #002e38; border-top: 2px solid rgba(255,255,255,0.15); padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+    .btn-nav { background: #334155; color: #ffffff; border: none; padding: 10px 22px; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; }
+    .btn-open { background: #16a34a; color: #ffffff; border: none; padding: 12px 28px; border-radius: 8px; font-size: 18px; font-weight: 800; cursor: pointer; }
+    .btn-open:disabled { background: #64748b; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <div class="stage">
+    <div class="slide-box" id="slide-stage"></div>
+  </div>
+
+  <!-- Big Screen Control Footer -->
+  <div class="control-bar">
+    <button class="btn-nav" onclick="prevSlide()">◀ Previous</button>
+    <div style="display:flex; align-items:center; gap: 16px;">
+      <span id="slide-indicator" style="font-size:15px; color:#cbd5e1; font-weight:600;">Slide 1 of 26</span>
+      <button class="btn-open" id="open-btn" onclick="openAnsweringWindow()">▶ Open for Answers (30s)</button>
+    </div>
+    <button class="btn-nav" onclick="nextSlide()">Next ▶</button>
+  </div>
+
+  <script>
+    // Paste your Google Apps Script URL here:
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyTkZJGb6_4sDJP4RKmoyqVkonvSy7pZFIMA5fXliEZY5UVd-pbKq0suK8Tc4RtfAtJ/exec"; // REPLACE THIS URL WITH YOUR APPS SCRIPT URL
+
+    let currentSlide = 0;
+    let localTimer = null;
+    let timerSec = 30;
+
+    // Verbatim text from slides
+    const SLIDES = [
+      // Slide 0: Title Slide
+      {
+        type: "TITLE",
+        title: "SIG Recalcitrant\nDermatophytosis Quiz",
+        quizMaster: "Dr Sheenam Hooda",
+        date: "11 October 2026"
+      },
+      // Slide 1: How the quiz works + QR Code
+      {
+        type: "RULES",
+        qr: "https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=https://quiz.samvedi.com/derma/"
+      },
+      // Slide 2: Q1
+      {
+        type: "QUESTION",
+        num: "01 / 20",
+        question: "Describe this histopathological sign seen in dermatophytosis",
+        image: "https://lh3.googleusercontent.com/d/1nV2T5lqk_xAuYAqHl6aUeEtLCWbW4ycv",
+        options: ["Pig tail sign", "Tea pot lid sign", "Sandwich sign", "Hamburger sign"]
+      },
+      // Slide 3: Q2
+      {
+        type: "QUESTION",
+        num: "02 / 20",
+        question: "William Dampier, an English explorer has given the first description of which of the following terminologies?",
+        image: "https://lh3.googleusercontent.com/d/1TfMmXqBzpn08r38FmEgfF6W1KUgJ3ipp",
+        options: ["Herpes circinatus", "Trichophytic granuloma", "Tokelau", "Kerion celsi"]
+      },
+      // Slide 4: Q3
+      {
+        type: "QUESTION",
+        num: "03 / 20",
+        question: "All of the following are true about deep dermatophytosis, except:",
+        options: [
+          "Associated with HIV infection",
+          "Associated with homozygous mutation in the gene coding for CARD8 protein",
+          "Characterised by extension of infection beyond the perifollicular area",
+          "Dissemination may be seen to lymph nodes and other organs"
+        ]
+      },
+      // Slide 5: Q4
+      {
+        type: "QUESTION",
+        num: "04 / 20",
+        question: "Positive hair perforation test is seen with which of the following organisms?",
+        options: ["M. canis", "T. rubrum", "M. audouinii", "M. equinum"]
+      },
+      // Slide 6: Q5
+      {
+        type: "QUESTION",
+        num: "05 / 20",
+        question: "All are true about Oteseconazole, except:",
+        options: [
+          "It is a novel triazole antifungal agent",
+          "Selective inhibitor of fungal lanosterol 14α-demethylase (CYP51)",
+          "It is prescribed orally",
+          "Trials suggest utility in recalcitrant onychomycosis"
+        ]
+      },
+      // Slide 7: Q6
+      {
+        type: "QUESTION",
+        num: "06 / 20",
+        question: "Identify the wrong combination with respect to staining and cellular component of dermatophytes",
+        options: [
+          "Periodic acid–Schiff (PAS) stains polysaccharide glycosaminoglycans",
+          "Uvitex 2B stains β-D-glucans",
+          "Calcofluor white stains chitin",
+          "Congo red stains β-D-glucans"
+        ]
+      },
+      // Slide 8: Q7
+      {
+        type: "QUESTION",
+        num: "07 / 20",
+        question: "Tinea gladiatorum is most commonly associated with which dermatophyte species?",
+        options: ["Trichophyton tonsurans", "Microsporum gypseum", "Trichophyton schoenleinii", "Microsporum audouinii"]
+      },
+      // Slide 9: Q8
+      {
+        type: "QUESTION",
+        num: "08 / 20",
+        question: "Transluscent vellus hairs observed on dermoscopy in a case of dermatophytosis is suggestive of which of the following?",
+        options: [
+          "Sparse infection of the hair follicle",
+          "Specific to long duration of infection",
+          "Suggests need for systemic therapy",
+          "All of the above"
+        ]
+      },
+      // Slide 10: Q9
+      {
+        type: "QUESTION",
+        num: "09 / 20",
+        question: "Which of the following about superbioavailable itraconazole is false?",
+        options: [
+          "Distribution, metabolism and excretion are similar to that of Conventional Itraconazole",
+          "Uniformly sized pellets are present",
+          "The site of absorption is the small intestine",
+          "Serum levels may increase when taken along with antacids"
+        ]
+      },
+      // Slide 11: Q10
+      {
+        type: "QUESTION",
+        num: "10 / 20",
+        question: "What is the specific mechanism of action of Sordarin as an antifungal agent?",
+        options: [
+          "Impairment of elongation factor 2 (EF-2) function",
+          "Reactive oxygen species (ROS) production and apoptosis",
+          "Elongation of the chitin chain",
+          "Inhibition of Calcineurin signalling"
+        ]
+      },
+      // Slide 12: Q11
+      {
+        type: "QUESTION",
+        num: "11 / 20",
+        question: "Which of the following is true about use of antifungals in dermatophytosis in a case of renal disease?",
+        options: [
+          "Itraconazole is a safe choice",
+          "Dose of Fluconazole has to be reduced in renal impairment",
+          "Dose of Terbinafine has to be reduced in renal impairment",
+          "All of the above"
+        ]
+      },
+      // Slide 13: Q12
+      {
+        type: "QUESTION",
+        num: "12 / 20",
+        question: "What is this dermoscopic appearance on onychoscopy known as?",
+        image: "https://lh3.googleusercontent.com/d/1dxN-Pkha0hHIOUwrjNToabN7-EfO2Fyk",
+        options: ["Ruin appearance", "Inverse triangle sign", "Aurora borealis appearance", "Contrast halo sign"]
+      },
+      // Slide 14: Q13
+      {
+        type: "QUESTION",
+        num: "13 / 20",
+        question: "All of the following topical antifungals are category B drugs in pregnancy, except:",
+        options: ["Terbinafine", "Ciclopirox olamine", "Clotrimazole", "Selenium sulphide"]
+      },
+      // Slide 15: Q14
+      {
+        type: "QUESTION",
+        num: "14 / 20",
+        question: "What is the role of Th17 cell response in dermatophytosis?",
+        options: [
+          "It favours fungus‑associated allergic responses",
+          "It inhibits neutrophil chemotaxis",
+          "It promotes Th1 mediated immune response",
+          "All of the above"
+        ]
+      },
+      // Slide 16: Q15
+      {
+        type: "QUESTION",
+        num: "15 / 20",
+        question: "Ear sign in dermatophytosis was first described in which condition?",
+        image: "https://lh3.googleusercontent.com/d/1S-Qd9MDCH9GTqofdBd9JqlGi2Dc4PL1C",
+        options: ["Tinea capitis", "Tinea faciei", "Tinea corporis", "Tinea unguium"]
+      },
+      // Slide 17: Q16
+      {
+        type: "QUESTION",
+        num: "16 / 20",
+        question: "Which of the following is not true about use of photodynamic therapy in onychomycosis?",
+        options: [
+          "Combats biofilm of dermatophytes involved in onychomycosis",
+          "Little to no risk of development of resistance",
+          "Nail penetration of methylene blue (MB) is better than that of aminolevulinic acid (ALA)",
+          "Pre-treatment is required with MB"
+        ]
+      },
+      // Slide 18: Q17
+      {
+        type: "QUESTION",
+        num: "17 / 20",
+        question: "“Mackenzie” brush technique was initially described in which type of tinea?",
+        options: [
+          "Fluorescent type of tinea capitis",
+          "Non-Fluorescent type of tinea capitis",
+          "Moccasin-type tinea pedis",
+          "Interdigital type of tinea pedis"
+        ]
+      },
+      // Slide 19: Q18
+      {
+        type: "QUESTION",
+        num: "18 / 20",
+        question: "Identify the wrong combination of type of tinea and most common causative agent",
+        options: [
+          "Favus and T. schoenleinii",
+          "Majocchi’s granuloma and T. violaceum",
+          "Moccasin-type tinea and T. rubrum",
+          "Endothrix and T. tonsurans"
+        ]
+      },
+      // Slide 20: Q19
+      {
+        type: "QUESTION",
+        num: "19 / 20",
+        question: "The syndrome depicted in image is associated with which of the following organisms?",
+        image: "https://lh3.googleusercontent.com/d/1kLhPN2SmhEaHjCWf7wZap5C6oHWoX7Sg",
+        options: ["T. mentagrophytes", "T. tonsurans", "T. violaceum", "T. rubrum"]
+      },
+      // Slide 21: Q20
+      {
+        type: "QUESTION",
+        num: "20 / 20",
+        question: "Cutaneous side effects associated with Terbinafine are:",
+        options: [
+          "Lupus-like reaction",
+          "Symmetrical drug-related intertriginous and flexural exanthema (SDRIFE)",
+          "Pityriasis Rosea-like rash",
+          "All of the above"
+        ]
+      },
+      // Slide 22: Answer Key Slide
+      {
+        type: "ANSWER_KEY"
+      },
+      // Slide 23: Live Leaderboard / Standings
+      {
+        type: "LEADERBOARD"
+      },
+      // Slide 24: Tie-Breaker Slide
+      {
+        type: "TIE_BREAKER",
+        question: "Which are the novel composition of Silver available, which can be used as an adjuvant to antifungal in the management of recalcitrant dermatophytosis?",
+        options: [
+          "Silversol, Vitamin E, Hyaluronic acid & Coconut oil",
+          "Silversol, Hyaluronic acid & Coconut oil",
+          "Silversol, Vitamin E & Coconut oil",
+          "Silversol, Vitamin E & Hyaluronic acid"
+        ]
+      },
+      // Slide 25: Thank You Slide
+      {
+        type: "THANK_YOU"
+      }
+    ];
+
+    function renderSlide(index) {
+      clearInterval(localTimer);
+      const stage = document.getElementById('slide-stage');
+      const openBtn = document.getElementById('open-btn');
+      const s = SLIDES[index];
+
+      document.getElementById('slide-indicator').innerText = `Slide ${index + 1} of ${SLIDES.length}`;
+
+      if (s.type === "TITLE") {
+        openBtn.style.display = 'none';
+        stage.innerHTML = `
+          <div class="top-meta">QUIZ</div>
+          <h1 class="main-title" style="white-space: pre-line;">${s.title}</h1>
+          <p style="font-size:22px; color:#cbd5e1; margin-top:20px;">QUIZ MASTER: <strong>${s.quizMaster}</strong></p>
+          <p style="font-size:16px; color:#94a3b8; margin-top:8px;">DATE: ${s.date}</p>
+        `;
+      } else if (s.type === "RULES") {
+        openBtn.style.display = 'none';
+        stage.innerHTML = `
+          <h1 style="font-size:36px; margin-bottom:20px;">How the quiz works</h1>
+          <div class="rules-card">
+            <div class="rule-row"><span>1 correct answer per question</span></div>
+            <div class="rule-row"><span>+4 points for a correct answer</span></div>
+            <div class="rule-row"><span>−1 point for a wrong answer</span></div>
+            <div class="rule-row"><span>30 s to answer each question</span></div>
+          </div>
+          <div style="margin-top:24px;">
+            <p style="font-size:16px; color:#67e8f9; margin-bottom:10px;">Scan to Join: quiz.samvedi.com/derma/</p>
+            <img src="${s.qr}" style="border-radius:12px; background:#fff; padding:8px;">
+          </div>
+        `;
+      } else if (s.type === "QUESTION") {
+        openBtn.style.display = 'inline-block';
+        openBtn.disabled = false;
+        openBtn.innerText = "▶ Open for Answers (30s)";
+
+        const media = s.image ? `<div class="media-box"><img src="${s.image}"></div>` : '';
+        stage.innerHTML = `
+          <div class="q-header">
+            <span class="q-num">QUESTION ${s.num}</span>
+            <span class="q-timer-badge" id="screen-timer">30s</span>
+          </div>
+          <div class="q-text">${s.question}</div>
+          ${media}
+          <div class="options-grid">
+            <div class="opt-card"><strong>A</strong> ${s.options[0]}</div>
+            <div class="opt-card"><strong>B</strong> ${s.options[1]}</div>
+            <div class="opt-card"><strong>C</strong> ${s.options[2]}</div>
+            <div class="opt-card"><strong>D</strong> ${s.options[3]}</div>
+          </div>
+        `;
+      } else if (s.type === "ANSWER_KEY") {
+        openBtn.style.display = 'none';
+        stage.innerHTML = `
+          <h1 style="font-size:32px; margin-bottom:14px; color:#facc15;">Answer key</h1>
+          <table class="key-table">
+            <thead>
+              <tr><th>Q</th><th>Key</th><th>Answer</th><th>Q</th><th>Key</th><th>Answer</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td>C</td><td>Sandwich sign</td><td>11</td><td>D</td><td>All of the above</td></tr>
+              <tr><td>2</td><td>C</td><td>Tokelau</td><td>12</td><td>C</td><td>Aurora borealis appearance</td></tr>
+              <tr><td>3</td><td>B</td><td>Associated with homozygous mutation in gene coding for CARD8 protein</td><td>13</td><td>D</td><td>Selenium sulphide</td></tr>
+              <tr><td>4</td><td>A</td><td>M. canis</td><td>14</td><td>C</td><td>It promotes Th1 mediated immune response</td></tr>
+              <tr><td>5</td><td>A</td><td>It is a novel triazole antifungal agent</td><td>15</td><td>A</td><td>Tinea capitis</td></tr>
+              <tr><td>6</td><td>B</td><td>Uvitex 2B stains β-D-glucans</td><td>16</td><td>D</td><td>Pre treatment is required with MB</td></tr>
+              <tr><td>7</td><td>A</td><td>Trichophyton tonsurans</td><td>17</td><td>B</td><td>Non-Fluorescent tinea capitis</td></tr>
+              <tr><td>8</td><td>C</td><td>Suggests need for systemic therapy</td><td>18</td><td>B</td><td>Majocchi’s granuloma and T. violaceum</td></tr>
+              <tr><td>9</td><td>B</td><td>Uniformly sized pellets are present</td><td>19</td><td>D</td><td>T. rubrum</td></tr>
+              <tr><td>10</td><td>A</td><td>Impairment of elongation factor 2 (EF-2) function</td><td>20</td><td>D</td><td>All of the above</td></tr>
+            </tbody>
+          </table>
+        `;
+      } else if (s.type === "LEADERBOARD") {
+        openBtn.style.display = 'none';
+        stage.innerHTML = `
+          <h1 style="font-size:36px; margin-bottom:6px; color:#38bdf8;">Podium & Standings</h1>
+          <p style="color:#cbd5e1;">Evaluated scores from all participants</p>
+          <div id="podium-area" class="podium-grid">Loading final scores...</div>
+        `;
+        fetchLeaderboard();
+      } else if (s.type === "TIE_BREAKER") {
+        openBtn.style.display = 'inline-block';
+        openBtn.disabled = false;
+        openBtn.innerText = "⚡ Open Tie-Breaker (30s)";
+        stage.innerHTML = `
+          <div class="q-header">
+            <span class="q-num" style="color:#f97316;">TIE-BREAKER</span>
+            <span class="q-timer-badge" id="screen-timer" style="background:#ffedd5; color:#ea580c;">30s</span>
+          </div>
+          <div class="q-text">${s.question}</div>
+          <div class="options-grid">
+            <div class="opt-card"><strong>A</strong> ${s.options[0]}</div>
+            <div class="opt-card"><strong>B</strong> ${s.options[1]}</div>
+            <div class="opt-card"><strong>C</strong> ${s.options[2]}</div>
+            <div class="opt-card"><strong>D</strong> ${s.options[3]}</div>
+          </div>
+        `;
+      } else if (s.type === "THANK_YOU") {
+        openBtn.style.display = 'none';
+        stage.innerHTML = `
+          <h1 class="main-title" style="font-size:56px; margin-bottom:12px;">Thank you</h1>
+          <p style="font-size:24px; color:#67e8f9;">SIG Recalcitrant Dermatophytosis Quiz</p>
+          <p style="font-size:18px; color:#cbd5e1; margin-top:8px;">Quiz Master: Dr Sheenam Hooda</p>
+        `;
+      }
+
+      // Notify backend of slide change
+      fetch(`${SCRIPT_URL}?action=setSlide&index=${index}`).catch(console.error);
+    }
+
+    function openAnsweringWindow() {
+      const openBtn = document.getElementById('open-btn');
+      openBtn.disabled = true;
+      openBtn.innerText = "Answering Open...";
+      timerSec = 30;
+
+      fetch(`${SCRIPT_URL}?action=startAnswering&index=${currentSlide}`).catch(console.error);
+
+      localTimer = setInterval(() => {
+        timerSec--;
+        const badge = document.getElementById('screen-timer');
+        if (badge) badge.innerText = `${timerSec}s`;
+
+        if (timerSec <= 0) {
+          clearInterval(localTimer);
+          openBtn.innerText = "Time Expired";
+        }
+      }, 1000);
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        currentSlide--;
+        renderSlide(currentSlide);
+      }
+    }
+
+    function nextSlide() {
+      if (currentSlide < SLIDES.length - 1) {
+        currentSlide++;
+        renderSlide(currentSlide);
+      }
+    }
+
+    function fetchLeaderboard() {
+      fetch(`${SCRIPT_URL}?action=getLeaderboard`)
+        .then(r => r.json())
+        .then(res => {
+          const area = document.getElementById('podium-area');
+          if (!area) return;
+          area.innerHTML = '';
+          const list = res.participants || [];
+
+          for (let i = 0; i < Math.min(3, list.length); i++) {
+            const p = list[i];
+            const crown = p.rank === 1 ? '👑' : (p.rank === 2 ? '🥈' : '🥉');
+            const card = document.createElement('div');
+            card.className = `podium-card p-rank-${p.rank}`;
+            const tbSpeed = p.tbTimeSec !== null ? `<div style="font-size:13px; color:#facc15; margin-top:6px;">TB: ${p.tbTimeSec}s (${p.tbCorrect ? '✔' : '✖'})</div>` : '';
+            card.innerHTML = `
+              <div class="podium-crown">${crown}</div>
+              <h2 style="font-size:24px;">Rank #${p.rank}</h2>
+              <p style="font-size:20px; font-weight:700; margin-top:4px;">${p.name}</p>
+              <p style="font-size:13px; color:#cbd5e1;">${p.clinic || p.place}</p>
+              <div class="podium-score">${p.score} pts</div>
+              ${tbSpeed}
+            `;
+            area.appendChild(card);
+          }
+        });
+    }
+
+    // Keyboard Arrow Keys navigation
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') nextSlide();
+      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') prevSlide();
+      else if (e.key === ' ' && !document.getElementById('open-btn').disabled) openAnsweringWindow();
+    });
+
+    // Initial render
+    renderSlide(0);
+  </script>
+</body>
+</html>
