@@ -3,17 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quiz Master Leaderboard | Dr. Sheenam Hooda</title>
+  <title>Quiz Master Console | Dr. Sheenam Hooda</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background: #0f172a; color: #f8fafc; padding: 28px 16px; }
     .container { max-width: 900px; margin: 0 auto; }
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
     h1 { font-size: 24px; color: #38bdf8; }
-    .btn-refresh { background: #0284c7; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
-    .btn-refresh:hover { background: #0369a1; }
     
-    /* Podium Highlights */
+    /* Quiz Master Controls */
+    .controls-panel { background: #1e293b; border-radius: 12px; padding: 18px 20px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #334155; flex-wrap: wrap; gap: 12px; }
+    .status-badge { font-weight: 700; font-size: 13px; padding: 4px 12px; border-radius: 999px; text-transform: uppercase; }
+    .state-active { background: #0284c7; color: #fff; }
+    .state-tb { background: #ea580c; color: #fff; }
+    .state-closed { background: #16a34a; color: #fff; }
+
+    .btn-action { color: #fff; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 14px; transition: opacity 0.2s; }
+    .btn-end { background: #ef4444; }
+    .btn-end:hover { background: #dc2626; }
+    .btn-refresh { background: #334155; color: #cbd5e1; }
+    .btn-refresh:hover { background: #475569; }
+
+    /* Highlights for Ranks 1, 2, 3 */
     .podium { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 32px; }
     .podium-card { background: #1e293b; border-radius: 12px; padding: 20px; border: 2px solid transparent; text-align: center; }
     .rank-1 { border-color: #fbbf24; background: linear-gradient(180deg, #1e293b 0%, rgba(251, 191, 36, 0.12) 100%); }
@@ -45,13 +56,24 @@
         <h1>Leaderboard &amp; Rankings</h1>
         <p style="font-size: 13px; color: #94a3b8;">SIG Recalcitrant Dermatophytosis Quiz Master Console</p>
       </div>
-      <button class="btn-refresh" onclick="loadLeaderboard()">↻ Refresh Standings</button>
+    </div>
+
+    <!-- Quiz Master Command Bar -->
+    <div class="controls-panel">
+      <div>
+        <span style="font-size: 13px; color: #94a3b8; margin-right: 8px;">Current State:</span>
+        <span id="quiz-state-badge" class="status-badge state-active">Active</span>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn-action btn-refresh" onclick="loadLeaderboard()">↻ Refresh</button>
+        <button id="end-quiz-btn" class="btn-action btn-end" onclick="handleEndQuiz()">End Quiz &amp; Process Results</button>
+      </div>
     </div>
 
     <!-- Highlights for Ranks 1, 2, and 3 -->
     <div id="podium-container" class="podium"></div>
 
-    <!-- Full Rankings Table -->
+    <!-- All Participants Table -->
     <h2 style="font-size: 18px; margin-bottom: 12px; color: #cbd5e1;">All Participants</h2>
     <table>
       <thead>
@@ -70,12 +92,10 @@
   </div>
 
   <script>
-    // Paste your exact Apps Script Web App exec URL here
+    // Paste your Google Apps Script Web App exec URL here:
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyTkZJGb6_4sDJP4RKmoyqVkonvSy7pZFIMA5fXliEZY5UVd-pbKq0suK8Tc4RtfAtJ/exec"; // REPLACE THIS URL WITH YOUR DEPLOYMENT URL
 
     function loadLeaderboard() {
-      document.getElementById('leaderboard-body').innerHTML = '<tr><td colspan="5" style="text-align:center;">Updating standings...</td></tr>';
-      
       fetch(`${SCRIPT_URL}?action=getLeaderboard`)
         .then(res => res.json())
         .then(data => renderData(data))
@@ -87,19 +107,56 @@
         });
     }
 
-    function renderData(list) {
+    function handleEndQuiz() {
+      if (!confirm("Are you sure you want to end the quiz and finalize standings? This will reveal rankings to doctors and activate the tie-breaker if there is a tie for Rank 1.")) {
+        return;
+      }
+      document.getElementById('end-quiz-btn').disabled = true;
+      document.getElementById('end-quiz-btn').innerText = "Processing...";
+
+      fetch(`${SCRIPT_URL}?action=endQuiz`)
+        .then(res => res.json())
+        .then(res => {
+          document.getElementById('end-quiz-btn').disabled = false;
+          document.getElementById('end-quiz-btn').innerText = "End Quiz & Process Results";
+          loadLeaderboard();
+        })
+        .catch(err => {
+          alert("Error processing: " + err);
+          document.getElementById('end-quiz-btn').disabled = false;
+        });
+    }
+
+    function renderData(data) {
+      const stateBadge = document.getElementById('quiz-state-badge');
+      const endBtn = document.getElementById('end-quiz-btn');
+      
+      if (data.state === 'ACTIVE') {
+        stateBadge.className = 'status-badge state-active';
+        stateBadge.innerText = 'Active (In Progress)';
+        endBtn.style.display = 'inline-block';
+      } else if (data.state === 'TIE_BREAKER') {
+        stateBadge.className = 'status-badge state-tb';
+        stateBadge.innerText = 'Tie-Breaker In Progress';
+        endBtn.style.display = 'none';
+      } else {
+        stateBadge.className = 'status-badge state-closed';
+        stateBadge.innerText = 'Finalized (Closed)';
+        endBtn.style.display = 'none';
+      }
+
       const podium = document.getElementById('podium-container');
       const tbody = document.getElementById('leaderboard-body');
       podium.innerHTML = '';
       tbody.innerHTML = '';
 
-      if (!list || list.length === 0) {
+      const list = data.participants || [];
+      if (list.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No submissions recorded yet.</td></tr>';
         return;
       }
 
       list.forEach(p => {
-        // Highlight Ranks 1, 2, and 3
         if (p.rank <= 3) {
           const card = document.createElement('div');
           card.className = `podium-card rank-${p.rank}`;
@@ -117,7 +174,6 @@
           podium.appendChild(card);
         }
 
-        // Table Rows
         const tr = document.createElement('tr');
         const tbTime = p.tbTimeSec !== null ? `${p.tbTimeSec}s (${p.tbCorrect ? '✔' : '✖'})` : '-';
         tr.innerHTML = `
@@ -132,6 +188,8 @@
     }
 
     loadLeaderboard();
+    // Auto-refresh the Quiz Master screen every 5 seconds
+    setInterval(loadLeaderboard, 5000);
   </script>
 </body>
 </html>
