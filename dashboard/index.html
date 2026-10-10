@@ -49,8 +49,10 @@
     table.leader-table th, table.leader-table td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.1); }
     table.leader-table th { background: rgba(0,0,0,0.4); color: #cbd5e1; position: sticky; top: 0; }
 
-    .control-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #002e38; border-top: 2px solid rgba(255,255,255,0.15); padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
-    .btn-nav { background: #334155; color: #ffffff; border: none; padding: 10px 22px; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; }
+    /* Control Bar: No Previous Button */
+    .control-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #002e38; border-top: 2px solid rgba(255,255,255,0.15); padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
+    .btn-next { background: #0284c7; color: #ffffff; border: none; padding: 12px 28px; border-radius: 8px; font-size: 16px; font-weight: 800; cursor: pointer; transition: all 0.2s; }
+    .btn-next:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; }
     .btn-open { background: #16a34a; color: #ffffff; border: none; padding: 12px 28px; border-radius: 8px; font-size: 18px; font-weight: 800; cursor: pointer; }
     .btn-open:disabled { background: #64748b; cursor: not-allowed; }
   </style>
@@ -62,20 +64,20 @@
   </div>
 
   <div class="control-bar">
-    <button class="btn-nav" onclick="prevSlide()">◀ Previous</button>
+    <div style="font-size:15px; color:#cbd5e1; font-weight:600;" id="slide-indicator">Slide 1 of 26</div>
     <div style="display:flex; align-items:center; gap: 16px;">
-      <span id="slide-indicator" style="font-size:15px; color:#cbd5e1; font-weight:600;">Slide 1 of 26</span>
       <button class="btn-open" id="open-btn" onclick="openAnsweringWindow()">▶ Open for Answers (30s)</button>
+      <button class="btn-next" id="next-btn" onclick="nextSlide()">Next ▶</button>
     </div>
-    <button class="btn-nav" onclick="nextSlide()">Next ▶</button>
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyTkZJGb6_4sDJP4RKmoyqVkonvSy7pZFIMA5fXliEZY5UVd-pbKq0suK8Tc4RtfAtJ/exec"; // REPLACE THIS URL WITH YOUR APPS SCRIPT URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_p1n14N5lQ94zT39V60Z6i1lM_D-Z0U/exec";
 
     let currentSlide = 0;
     let localTimer = null;
     let timerSec = 30;
+    let isTimerRunning = false;
 
     const SLIDES = [
       { type: "TITLE", title: "SIG Recalcitrant\nDermatophytosis Quiz", quizMaster: "Dr Sheenam Hooda", date: "11 October 2026" },
@@ -114,14 +116,18 @@
 
     function renderSlide(index) {
       clearInterval(localTimer);
+      isTimerRunning = false;
       const stage = document.getElementById('slide-stage');
       const openBtn = document.getElementById('open-btn');
+      const nextBtn = document.getElementById('next-btn');
       const s = SLIDES[index];
 
       document.getElementById('slide-indicator').innerText = `Slide ${index + 1} of ${SLIDES.length}`;
 
       if (s.type === "TITLE") {
         openBtn.style.display = 'none';
+        nextBtn.disabled = false;
+        nextBtn.innerText = "Next ▶";
         stage.innerHTML = `
           <div class="top-meta">QUIZ</div>
           <h1 class="main-title" style="white-space: pre-line;">${s.title}</h1>
@@ -130,6 +136,8 @@
         `;
       } else if (s.type === "RULES") {
         openBtn.style.display = 'none';
+        nextBtn.disabled = false;
+        nextBtn.innerText = "Next ▶";
         stage.innerHTML = `
           <h1 style="font-size:36px; margin-bottom:20px;">How the quiz works</h1>
           <div class="rules-card">
@@ -148,6 +156,10 @@
         openBtn.disabled = false;
         openBtn.innerText = "▶ Open for Answers (30s)";
 
+        // Must open answers and finish 30s timer before Next is allowed
+        nextBtn.disabled = true;
+        nextBtn.innerText = "Locked (Timer Required)";
+
         const media = s.image ? `<div class="media-box"><img src="${s.image}"></div>` : '';
         stage.innerHTML = `
           <div class="q-header">
@@ -165,6 +177,8 @@
         `;
       } else if (s.type === "ANSWER_KEY") {
         openBtn.style.display = 'none';
+        nextBtn.disabled = false;
+        nextBtn.innerText = "Next ▶";
         stage.innerHTML = `
           <h1 style="font-size:32px; margin-bottom:14px; color:#facc15;">Answer key</h1>
           <table class="key-table">
@@ -185,6 +199,8 @@
         `;
       } else if (s.type === "LEADERBOARD") {
         openBtn.style.display = 'none';
+        nextBtn.disabled = false;
+        nextBtn.innerText = "Next ▶";
         stage.innerHTML = `
           <h1 style="font-size:36px; margin-bottom:6px; color:#38bdf8;">Leaderboard & Podium</h1>
           <p style="color:#cbd5e1;">Evaluated standings of all participants</p>
@@ -201,6 +217,10 @@
         openBtn.style.display = 'inline-block';
         openBtn.disabled = false;
         openBtn.innerText = "⚡ Open Tie-Breaker (30s)";
+        
+        nextBtn.disabled = true;
+        nextBtn.innerText = "Locked (Timer Required)";
+
         stage.innerHTML = `
           <div class="q-header">
             <span class="q-num" style="color:#f97316;">TIE-BREAKER</span>
@@ -216,6 +236,8 @@
         `;
       } else if (s.type === "THANK_YOU") {
         openBtn.style.display = 'none';
+        nextBtn.disabled = true;
+        nextBtn.innerText = "End of Session";
         stage.innerHTML = `
           <h1 class="main-title" style="font-size:56px; margin-bottom:12px;">Thank you</h1>
           <p style="font-size:24px; color:#67e8f9;">SIG Recalcitrant Dermatophytosis Quiz</p>
@@ -228,9 +250,15 @@
 
     function openAnsweringWindow() {
       const openBtn = document.getElementById('open-btn');
+      const nextBtn = document.getElementById('next-btn');
       openBtn.disabled = true;
       openBtn.innerText = "Answering Open...";
       timerSec = 30;
+      isTimerRunning = true;
+
+      // Ensure Next button remains strictly locked while timer is running
+      nextBtn.disabled = true;
+      nextBtn.innerText = `Wait for Timer (${timerSec}s)`;
 
       sendBackendCommand(`action=startAnswering&index=${currentSlide}`);
 
@@ -238,22 +266,24 @@
         timerSec--;
         const badge = document.getElementById('screen-timer');
         if (badge) badge.innerText = `${timerSec}s`;
+        if (nextBtn) nextBtn.innerText = `Wait for Timer (${timerSec}s)`;
 
         if (timerSec <= 0) {
           clearInterval(localTimer);
+          isTimerRunning = false;
           openBtn.innerText = "Time Expired";
+          
+          // Answers are safely locked and recorded: unlock the Next button!
+          nextBtn.disabled = false;
+          nextBtn.innerText = "Next ▶";
         }
       }, 1000);
     }
 
-    function prevSlide() {
-      if (currentSlide > 0) {
-        currentSlide--;
-        renderSlide(currentSlide);
-      }
-    }
-
     function nextSlide() {
+      // Hard guard: Cannot advance if timer is actively running
+      if (isTimerRunning) return;
+
       if (currentSlide < SLIDES.length - 1) {
         currentSlide++;
         renderSlide(currentSlide);
@@ -271,7 +301,6 @@
           tbody.innerHTML = '';
           const list = res.participants || [];
 
-          // Top 3 Podium
           for (let i = 0; i < Math.min(3, list.length); i++) {
             const p = list[i];
             const crown = p.rank === 1 ? '👑' : (p.rank === 2 ? '🥈' : '🥉');
@@ -289,7 +318,6 @@
             area.appendChild(card);
           }
 
-          // Full Table of all participants
           list.forEach(p => {
             const tr = document.createElement('tr');
             const tbStr = p.tbTimeSec !== null ? `${p.tbTimeSec}s (${p.tbCorrect ? '✔' : '✖'})` : '-';
@@ -305,10 +333,16 @@
         });
     }
 
+    // Keyboard navigation guard: Left/Up blocked completely, Right/Down blocked while timer is active
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowRight' || e.key === 'PageDown') nextSlide();
-      else if (e.key === 'ArrowLeft' || e.key === 'PageUp') prevSlide();
-      else if (e.key === ' ' && !document.getElementById('open-btn').disabled) openAnsweringWindow();
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+        const nextBtn = document.getElementById('next-btn');
+        if (nextBtn && !nextBtn.disabled && !isTimerRunning) {
+          nextSlide();
+        }
+      } else if (e.key === ' ' && !document.getElementById('open-btn').disabled) {
+        openAnsweringWindow();
+      }
     });
 
     renderSlide(0);
