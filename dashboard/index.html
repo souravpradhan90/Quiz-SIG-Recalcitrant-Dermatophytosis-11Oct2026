@@ -110,8 +110,7 @@
 
     function sendBackendCommand(params) {
       const url = `${SCRIPT_URL}?${params}&t=${Date.now()}`;
-      const img = new Image();
-      img.src = url;
+      fetch(url, { mode: 'no-cors', cache: 'no-cache' }).catch(console.error);
     }
 
     function renderSlide(index) {
