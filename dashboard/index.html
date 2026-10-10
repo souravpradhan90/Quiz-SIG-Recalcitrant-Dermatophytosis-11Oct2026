@@ -34,7 +34,6 @@
     .key-table th, .key-table td { padding: 8px 12px; border: 1px solid rgba(255,255,255,0.15); text-align: left; }
     .key-table th { background: rgba(255,255,255,0.15); color: #facc15; font-weight: 700; }
 
-    /* Top 3 Podium */
     .podium-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin: 20px 0; }
     .podium-card { background: rgba(0,0,0,0.3); border-radius: 16px; padding: 22px; border: 3px solid transparent; }
     .p-rank-1 { border-color: #facc15; background: rgba(250, 204, 21, 0.15); }
@@ -43,13 +42,16 @@
     .podium-crown { font-size: 38px; margin-bottom: 4px; }
     .podium-score { font-size: 22px; font-weight: 800; color: #38bdf8; margin-top: 6px; }
 
-    /* Full Participants Table */
     .table-container { max-height: 240px; overflow-y: auto; background: rgba(0,0,0,0.25); border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); margin-top: 16px; }
     table.leader-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
     table.leader-table th, table.leader-table td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.1); }
     table.leader-table th { background: rgba(0,0,0,0.4); color: #cbd5e1; position: sticky; top: 0; }
 
-    /* Control Bar: No Previous Button */
+    /* Tie-breaker results styling */
+    .tb-result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-top: 24px; }
+    .tb-card { background: rgba(0,0,0,0.35); border-radius: 14px; padding: 20px; border: 2px solid #ea580c; text-align: center; }
+    .tb-winner { border-color: #facc15; background: rgba(250, 204, 21, 0.2); }
+
     .control-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #002e38; border-top: 2px solid rgba(255,255,255,0.15); padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
     .btn-next { background: #0284c7; color: #ffffff; border: none; padding: 12px 28px; border-radius: 8px; font-size: 16px; font-weight: 800; cursor: pointer; transition: all 0.2s; }
     .btn-next:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; }
@@ -64,7 +66,7 @@
   </div>
 
   <div class="control-bar">
-    <div style="font-size:15px; color:#cbd5e1; font-weight:600;" id="slide-indicator">Slide 1 of 26</div>
+    <div style="font-size:15px; color:#cbd5e1; font-weight:600;" id="slide-indicator">Slide 1 of 27</div>
     <div style="display:flex; align-items:center; gap: 16px;">
       <button class="btn-open" id="open-btn" onclick="openAnsweringWindow()">▶ Open for Answers (30s)</button>
       <button class="btn-next" id="next-btn" onclick="nextSlide()">Next ▶</button>
@@ -78,6 +80,24 @@
     let localTimer = null;
     let timerSec = 30;
     let isTimerRunning = false;
+
+    function callBackendJsonp(params, callbackName) {
+      const script = document.createElement('script');
+      const cb = callbackName || ('cb_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
+      
+      if (!callbackName) {
+        window[cb] = function() {
+          delete window[cb];
+          if (script.parentNode) script.parentNode.removeChild(script);
+        };
+      }
+
+      script.src = `${SCRIPT_URL}?${params}&callback=${cb}&_t=${Date.now()}`;
+      script.onerror = function() {
+        if (script.parentNode) script.parentNode.removeChild(script);
+      };
+      document.body.appendChild(script);
+    }
 
     const SLIDES = [
       { type: "TITLE", title: "SIG Recalcitrant\nDermatophytosis Quiz", quizMaster: "Dr Sheenam Hooda", date: "11 October 2026" },
@@ -104,14 +124,10 @@
       { type: "QUESTION", num: "20 / 20", question: "Cutaneous side effects associated with Terbinafine are:", options: ["Lupus-like reaction", "Symmetrical drug-related intertriginous and flexural exanthema (SDRIFE)", "Pityriasis Rosea-like rash", "All of the above"] },
       { type: "ANSWER_KEY" },
       { type: "LEADERBOARD" },
-      { type: "TIE_BREAKER", question: "Which are the novel composition of Silver available, which can be used as an adjuvant to antifungal in the management of recalcitrant dermatophytosis?", options: ["Silversol, Vitamin E, Hyaluronic acid & Coconut oil", "Silversol, Hyaluronic acid & Coconut oil", "Silversol, Vitamin E & Coconut oil", "Silversol, Vitamin E & Hyaluronic acid"] },
+      { type: "TIE_BREAKER", question: "Which are the novel composition of Silver available, which can be used as an adjuvant to antifungal in the management of recalcitrant dermatophytosis?[cite: 1]", options: ["Silversol, Vitamin E, Hyaluronic acid & Coconut oil", "Silversol, Hyaluronic acid & Coconut oil", "Silversol, Vitamin E & Coconut oil", "Silversol, Vitamin E & Hyaluronic acid"] },
+      { type: "TB_RESULTS" },
       { type: "THANK_YOU" }
     ];
-
-    function sendBackendCommand(params) {
-      const url = `${SCRIPT_URL}?${params}&t=${Date.now()}`;
-      fetch(url, { mode: 'no-cors', cache: 'no-cache' }).catch(console.error);
-    }
 
     function renderSlide(index) {
       clearInterval(localTimer);
@@ -155,7 +171,6 @@
         openBtn.disabled = false;
         openBtn.innerText = "▶ Open for Answers (30s)";
 
-        // Must open answers and finish 30s timer before Next is allowed
         nextBtn.disabled = true;
         nextBtn.innerText = "Locked (Timer Required)";
 
@@ -233,6 +248,16 @@
             <div class="opt-card"><strong>D</strong> ${s.options[3]}</div>
           </div>
         `;
+      } else if (s.type === "TB_RESULTS") {
+        openBtn.style.display = 'none';
+        nextBtn.disabled = false;
+        nextBtn.innerText = "Next ▶";
+        stage.innerHTML = `
+          <h1 style="font-size:36px; margin-bottom:6px; color:#facc15;">Tie-Breaker Results</h1>
+          <p style="color:#cbd5e1;">Final outcome of the Rank 1 tie-breaker round</p>
+          <div id="tb-results-area" class="tb-result-grid">Loading tie-breaker submissions...</div>
+        `;
+        fetchTieBreakerResults();
       } else if (s.type === "THANK_YOU") {
         openBtn.style.display = 'none';
         nextBtn.disabled = true;
@@ -244,7 +269,7 @@
         `;
       }
 
-      sendBackendCommand(`action=setSlide&index=${index}`);
+      callBackendJsonp(`action=setSlide&index=${index}`);
     }
 
     function openAnsweringWindow() {
@@ -255,11 +280,10 @@
       timerSec = 30;
       isTimerRunning = true;
 
-      // Ensure Next button remains strictly locked while timer is running
       nextBtn.disabled = true;
       nextBtn.innerText = `Wait for Timer (${timerSec}s)`;
 
-      sendBackendCommand(`action=startAnswering&index=${currentSlide}`);
+      callBackendJsonp(`action=startAnswering&index=${currentSlide}`);
 
       localTimer = setInterval(() => {
         timerSec--;
@@ -271,8 +295,6 @@
           clearInterval(localTimer);
           isTimerRunning = false;
           openBtn.innerText = "Time Expired";
-          
-          // Answers are safely locked and recorded: unlock the Next button!
           nextBtn.disabled = false;
           nextBtn.innerText = "Next ▶";
         }
@@ -280,9 +302,7 @@
     }
 
     function nextSlide() {
-      // Hard guard: Cannot advance if timer is actively running
       if (isTimerRunning) return;
-
       if (currentSlide < SLIDES.length - 1) {
         currentSlide++;
         renderSlide(currentSlide);
@@ -290,49 +310,87 @@
     }
 
     function fetchLeaderboard() {
-      fetch(`${SCRIPT_URL}?action=getLeaderboard`)
-        .then(r => r.json())
-        .then(res => {
-          const area = document.getElementById('podium-area');
-          const tbody = document.getElementById('leader-table-body');
-          if (!area || !tbody) return;
-          area.innerHTML = '';
-          tbody.innerHTML = '';
-          const list = res.participants || [];
+      const cbName = 'renderLeaderboardData_' + Date.now();
+      window[cbName] = function(res) {
+        delete window[cbName];
+        const area = document.getElementById('podium-area');
+        const tbody = document.getElementById('leader-table-body');
+        if (!area || !tbody) return;
+        area.innerHTML = '';
+        tbody.innerHTML = '';
+        const list = res.participants || [];
 
-          for (let i = 0; i < Math.min(3, list.length); i++) {
-            const p = list[i];
-            const crown = p.rank === 1 ? '👑' : (p.rank === 2 ? '🥈' : '🥉');
-            const card = document.createElement('div');
-            card.className = `podium-card p-rank-${p.rank}`;
-            const tbSpeed = p.tbTimeSec !== null ? `<div style="font-size:13px; color:#facc15; margin-top:6px;">TB: ${p.tbTimeSec}s (${p.tbCorrect ? '✔' : '✖'})</div>` : '';
-            card.innerHTML = `
-              <div class="podium-crown">${crown}</div>
-              <h2 style="font-size:22px;">Rank #${p.rank}</h2>
-              <p style="font-size:18px; font-weight:700; margin-top:4px;">${p.name}</p>
-              <p style="font-size:13px; color:#cbd5e1;">${p.clinic || p.place}</p>
-              <div class="podium-score">${p.score} pts</div>
-              ${tbSpeed}
-            `;
-            area.appendChild(card);
-          }
+        for (let i = 0; i < Math.min(3, list.length); i++) {
+          const p = list[i];
+          const crown = p.rank === 1 ? '👑' : (p.rank === 2 ? '🥈' : '🥉');
+          const card = document.createElement('div');
+          card.className = `podium-card p-rank-${p.rank}`;
+          const tbSpeed = p.tbTimeSec !== null ? `<div style="font-size:13px; color:#facc15; margin-top:6px;">TB: ${p.tbTimeSec}s (${p.tbCorrect ? '✔' : '✖'})</div>` : '';
+          card.innerHTML = `
+            <div class="podium-crown">${crown}</div>
+            <h2 style="font-size:22px;">Rank #${p.rank}</h2>
+            <p style="font-size:18px; font-weight:700; margin-top:4px;">${p.name}</p>
+            <p style="font-size:13px; color:#cbd5e1;">${p.clinic || p.place}</p>
+            <div class="podium-score">${p.score} pts</div>
+            ${tbSpeed}
+          `;
+          area.appendChild(card);
+        }
 
-          list.forEach(p => {
-            const tr = document.createElement('tr');
-            const tbStr = p.tbTimeSec !== null ? `${p.tbTimeSec}s (${p.tbCorrect ? '✔' : '✖'})` : '-';
-            tr.innerHTML = `
-              <td style="font-weight:700;">#${p.rank}</td>
-              <td><strong>${p.name}</strong></td>
-              <td>${p.clinic} (${p.place})</td>
-              <td style="font-weight:700; color:#38bdf8;">${p.score}</td>
-              <td>${tbStr}</td>
-            `;
-            tbody.appendChild(tr);
-          });
+        list.forEach(p => {
+          const tr = document.createElement('tr');
+          const tbStr = p.tbTimeSec !== null ? `${p.tbTimeSec}s (${p.tbCorrect ? '✔' : '✖'})` : '-';
+          tr.innerHTML = `
+            <td style="font-weight:700;">#${p.rank}</td>
+            <td><strong>${p.name}</strong></td>
+            <td>${p.clinic} (${p.place})</td>
+            <td style="font-weight:700; color:#38bdf8;">${p.score}</td>
+            <td>${tbStr}</td>
+          `;
+          tbody.appendChild(tr);
         });
+      };
+
+      callBackendJsonp(`action=getLeaderboard`, cbName);
     }
 
-    // Keyboard navigation guard: Left/Up blocked completely, Right/Down blocked while timer is active
+    function fetchTieBreakerResults() {
+      const cbName = 'renderTbData_' + Date.now();
+      window[cbName] = function(res) {
+        delete window[cbName];
+        const area = document.getElementById('tb-results-area');
+        if (!area) return;
+        area.innerHTML = '';
+        const list = res.participants || [];
+
+        // Filter participants who answered the tie breaker
+        const tbCandidates = list.filter(p => p.tbTimeSec !== null || p.tbAnswer !== '');
+
+        if (tbCandidates.length === 0) {
+          area.innerHTML = `<p style="grid-column: 1/-1; color:#cbd5e1; font-size:18px;">No tie-breaker submissions recorded.</p>`;
+          return;
+        }
+
+        tbCandidates.forEach((p, idx) => {
+          const isWinner = (idx === 0 && p.tbCorrect);
+          const card = document.createElement('div');
+          card.className = `tb-card ${isWinner ? 'tb-winner' : ''}`;
+          card.innerHTML = `
+            <div style="font-size:36px; margin-bottom:6px;">${isWinner ? '🏆' : '🎯'}</div>
+            <h2 style="font-size:24px; font-weight:800; color:#fff;">${p.name}</h2>
+            <p style="font-size:14px; color:#cbd5e1; margin-bottom:12px;">${p.clinic || p.place}</p>
+            <div style="font-size:18px; font-weight:700; margin-bottom:6px;">Option Selected: <span style="color:#facc15;">${p.tbAnswer || 'Unattempted'}</span></div>
+            <div style="font-size:16px; margin-bottom:6px;">Time Taken: <strong>${p.tbTimeSec !== null ? p.tbTimeSec + 's' : '-'}</strong></div>
+            <div style="font-size:16px; font-weight:700; color:${p.tbCorrect ? '#4ade80' : '#f87171'};">${p.tbCorrect ? '✔ Correct Answer' : '✖ Incorrect Answer'}</div>
+            ${isWinner ? '<div style="margin-top:10px; font-weight:800; color:#facc15; font-size:18px;">★ 1st Place Champion ★</div>' : ''}
+          `;
+          area.appendChild(card);
+        });
+      };
+
+      callBackendJsonp(`action=getLeaderboard`, cbName);
+    }
+
     window.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowRight' || e.key === 'PageDown') {
         const nextBtn = document.getElementById('next-btn');
