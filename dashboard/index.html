@@ -70,6 +70,7 @@
     let tbTimer = null;
     let tbSec = 30;
     let isTbRunning = false;
+    let hasRank1Tie = false;
 
     function callBackendJsonp(params, callback) {
       const cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
@@ -191,7 +192,7 @@
       } else if (s.type === "LEADERBOARD") {
         stage.innerHTML = `
           <h1 style="font-size:36px; margin-bottom:6px; color:#38bdf8;">Leaderboard &amp; Rankings</h1>
-          <p style="color:#cbd5e1; margin-bottom: 12px;">Official verified scores of all participants (Highest rank first)</p>
+          <p style="color:#cbd5e1; margin-bottom: 12px;">Official verified scores of all participants (Rankings resolved by score &amp; speed)</p>
           <div class="table-container">
             <table class="leader-table">
               <thead><tr><th style="width:90px;">Rank</th><th>Doctor Name</th><th>Clinic / Place</th><th style="width:110px;">Score</th><th style="width:160px;">Tie-Breaker</th></tr></thead>
@@ -277,6 +278,17 @@
 
     function nextSlide() {
       if (isTbRunning) return;
+
+      // Smart routing: On Leaderboard slide (Slide 24, index 23), skip tie-breaker if only 1 winner
+      if (currentSlide === 23) {
+        if (!hasRank1Tie) {
+          // Direct jump to Thank You (index 26)
+          currentSlide = 26;
+          renderSlide(currentSlide);
+          return;
+        }
+      }
+
       if (currentSlide < SLIDES.length - 1) {
         currentSlide++;
         renderSlide(currentSlide);
@@ -285,6 +297,14 @@
 
     function prevSlide() {
       if (isTbRunning) return;
+
+      // Smart backward routing: If at Thank You (index 26) and there was no tie-breaker, go back to Leaderboard (index 23)
+      if (currentSlide === 26 && !hasRank1Tie) {
+        currentSlide = 23;
+        renderSlide(currentSlide);
+        return;
+      }
+
       if (currentSlide > 0) {
         currentSlide--;
         renderSlide(currentSlide);
@@ -297,6 +317,7 @@
         if (!tbody) return;
         tbody.innerHTML = '';
         const list = (res && res.participants) ? res.participants : [];
+        hasRank1Tie = (res && res.hasTieBreaker) === true;
 
         if (list.length === 0) {
           tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 24px;">No participants recorded.</td></tr>';
@@ -337,17 +358,12 @@
           return;
         }
 
-        const anyCorrect = tbCandidates.some(p => p.tbCorrect === true);
-
         tbCandidates.forEach((p) => {
           const isWinner = (p.rank === 1);
           const tr = document.createElement('tr');
           if (isWinner) tr.className = 'winner-highlight';
 
-          let championTag = '';
-          if (isWinner) {
-            championTag = anyCorrect ? '★ 1st Place Champion' : '★ Joint Winner (Tied)';
-          }
+          let championTag = isWinner ? '★ 1st Place Champion' : '';
 
           let resultText = '';
           if (p.tbCorrect) {
