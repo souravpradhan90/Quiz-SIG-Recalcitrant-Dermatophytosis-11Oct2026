@@ -359,7 +359,7 @@
         }
 
         tbCandidates.forEach((p) => {
-          const isWinner = (idx === 0 && p.tbCorrect);
+          const isWinner = (p.rank === 1);
           const tr = document.createElement('tr');
           if (isWinner) tr.className = 'winner-highlight';
 
