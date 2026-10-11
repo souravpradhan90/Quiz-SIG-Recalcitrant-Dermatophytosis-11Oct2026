@@ -63,7 +63,7 @@
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyTkZJGb6_4sDJP4RKmoyqVkonvSy7pZFIMA5fXliEZY5UVd-pbKq0suK8Tc4RtfAtJ/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_p1n14N5lQ94zT39V60Z6i1lM_D-Z0U/exec";
 
     let currentSlide = 0;
     let localTimer = null;
@@ -205,7 +205,7 @@
         nextBtn.innerText = "Next ▶";
         stage.innerHTML = `
           <h1 style="font-size:36px; margin-bottom:6px; color:#38bdf8;">Leaderboard &amp; Rankings</h1>
-          <p style="color:#cbd5e1; margin-bottom: 12px;">Evaluated scores of all participants (Highest rank first)</p>
+          <p style="color:#cbd5e1; margin-bottom: 12px;">Official verified scores of all participants (Highest rank first)</p>
           <div class="table-container">
             <table class="leader-table">
               <thead><tr><th style="width:90px;">Rank</th><th>Doctor Name</th><th>Clinic / Place</th><th style="width:110px;">Score</th><th style="width:160px;">Tie-Breaker</th></tr></thead>
@@ -347,7 +347,6 @@
           return;
         }
 
-        // Check if ANY tie-breaker participant answered correctly
         const anyCorrect = tbCandidates.some(p => p.tbCorrect === true);
 
         tbCandidates.forEach((p) => {
