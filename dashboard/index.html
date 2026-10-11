@@ -36,7 +36,7 @@
 
     .table-container { max-height: 480px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); margin-top: 20px; }
     table.leader-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 16px; }
-    table.leader-table th, table.leader-table td { padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    table.leader-table th, table.leader-table td { padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
     table.leader-table th { background: rgba(0,0,0,0.5); color: #67e8f9; position: sticky; top: 0; font-weight: 800; font-size: 15px; text-transform: uppercase; }
     tr.rank-1-row { background: rgba(250, 204, 21, 0.18); font-weight: 600; }
     tr.winner-highlight { background: rgba(34, 197, 94, 0.22); font-weight: 700; }
@@ -192,11 +192,11 @@
       } else if (s.type === "LEADERBOARD") {
         stage.innerHTML = `
           <h1 style="font-size:36px; margin-bottom:6px; color:#38bdf8;">Leaderboard &amp; Rankings</h1>
-          <p style="color:#cbd5e1; margin-bottom: 12px;">Official verified scores of all participants (Rankings resolved by score &amp; speed)</p>
+          <p style="color:#cbd5e1; margin-bottom: 12px;">Official verified scores of all participants (Rank 1 ties proceed to Tie-Breaker)</p>
           <div class="table-container">
             <table class="leader-table">
-              <thead><tr><th style="width:90px;">Rank</th><th>Doctor Name</th><th>Clinic / Place</th><th style="width:110px;">Score</th><th style="width:160px;">Tie-Breaker</th></tr></thead>
-              <tbody id="leader-table-body"><tr><td colspan="5" style="text-align:center; padding: 24px;">Loading participants...</td></tr></tbody>
+              <thead><tr><th style="width:80px;">Rank</th><th>Doctor Name</th><th>Clinic / Place</th><th style="width:100px;">Score</th><th style="width:120px;">Quiz Time</th><th style="width:140px;">Tie-Breaker</th></tr></thead>
+              <tbody id="leader-table-body"><tr><td colspan="6" style="text-align:center; padding: 24px;">Loading participants...</td></tr></tbody>
             </table>
           </div>
         `;
@@ -228,7 +228,7 @@
           <p style="color:#cbd5e1; margin-bottom: 12px;">Evaluated outcome based on correctness &amp; fastest response time</p>
           <div class="table-container">
             <table class="leader-table">
-              <thead><tr><th style="width:90px;">Rank</th><th>Doctor Name</th><th>Clinic / Place</th><th style="width:110px;">Selected</th><th style="width:140px;">Speed</th><th style="width:140px;">Result</th></tr></thead>
+              <thead><tr><th style="width:80px;">Rank</th><th>Doctor Name</th><th>Clinic / Place</th><th style="width:110px;">Selected</th><th style="width:140px;">Speed</th><th style="width:140px;">Result</th></tr></thead>
               <tbody id="tb-table-body"><tr><td colspan="6" style="text-align:center; padding: 24px;">Loading tie-breaker participants...</td></tr></tbody>
             </table>
           </div>
@@ -279,11 +279,10 @@
     function nextSlide() {
       if (isTbRunning) return;
 
-      // Smart routing: On Leaderboard slide (Slide 24, index 23), skip tie-breaker if only 1 winner
+      // Conditional jump: If on Leaderboard slide (index 23), skip tie-breaker if only 1 winner
       if (currentSlide === 23) {
         if (!hasRank1Tie) {
-          // Direct jump to Thank You (index 26)
-          currentSlide = 26;
+          currentSlide = 26; // Direct to Thank You
           renderSlide(currentSlide);
           return;
         }
@@ -298,9 +297,8 @@
     function prevSlide() {
       if (isTbRunning) return;
 
-      // Smart backward routing: If at Thank You (index 26) and there was no tie-breaker, go back to Leaderboard (index 23)
       if (currentSlide === 26 && !hasRank1Tie) {
-        currentSlide = 23;
+        currentSlide = 23; // Back to Leaderboard
         renderSlide(currentSlide);
         return;
       }
@@ -320,7 +318,7 @@
         hasRank1Tie = (res && res.hasTieBreaker) === true;
 
         if (list.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 24px;">No participants recorded.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 24px;">No participants recorded.</td></tr>';
           return;
         }
 
@@ -328,6 +326,7 @@
           const tr = document.createElement('tr');
           if (p.rank === 1) tr.className = 'rank-1-row';
 
+          const totalTimeStr = (p.totalQuizTime && p.totalQuizTime < 90000) ? `${p.totalQuizTime}s` : '-';
           const tbStr = p.tbTimeSec !== null 
             ? `${p.tbTimeSec}s (${p.tbCorrect ? '✔' : '✖'})`
             : '-';
@@ -337,6 +336,7 @@
             <td><strong>${p.name}</strong> ${p.rank === 1 ? '👑' : ''}</td>
             <td>${p.clinic} (${p.place})</td>
             <td style="font-weight:800; color:#38bdf8;">${p.score}</td>
+            <td style="font-weight:700; color:#cbd5e1;">${totalTimeStr}</td>
             <td>${tbStr}</td>
           `;
           tbody.appendChild(tr);
