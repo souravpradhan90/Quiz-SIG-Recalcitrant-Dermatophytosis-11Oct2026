@@ -9,7 +9,7 @@
     body { background: #004b5c; color: #ffffff; min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between; overflow-x: hidden; }
 
     .stage { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 24px 110px; text-align: center; }
-    .slide-box { max-width: 1050px; width: 100%; }
+    .slide-box { max-width: 1100px; width: 100%; }
 
     .top-meta { font-size: 15px; font-weight: 700; letter-spacing: 1px; color: #67e8f9; text-transform: uppercase; margin-bottom: 12px; }
     .q-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 12px; margin-bottom: 24px; }
@@ -34,17 +34,13 @@
     .key-table th, .key-table td { padding: 8px 12px; border: 1px solid rgba(255,255,255,0.15); text-align: left; }
     .key-table th { background: rgba(255,255,255,0.15); color: #facc15; font-weight: 700; }
 
-    /* Full Participants Table - No top 3 cards */
-    .table-container { max-height: 440px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); margin-top: 20px; }
+    /* Tables for Leaderboard & Tie-Breaker */
+    .table-container { max-height: 480px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); margin-top: 20px; }
     table.leader-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 16px; }
-    table.leader-table th, table.leader-table td { padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-    table.leader-table th { background: rgba(0,0,0,0.5); color: #67e8f9; position: sticky; top: 0; font-weight: 800; }
-    tr.rank-1-row { background: rgba(250, 204, 21, 0.15); }
-
-    /* Tie-breaker results grid */
-    .tb-result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-top: 24px; }
-    .tb-card { background: rgba(0,0,0,0.35); border-radius: 14px; padding: 22px; border: 2px solid #ea580c; text-align: center; }
-    .tb-winner { border-color: #facc15; background: rgba(250, 204, 21, 0.2); }
+    table.leader-table th, table.leader-table td { padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    table.leader-table th { background: rgba(0,0,0,0.5); color: #67e8f9; position: sticky; top: 0; font-weight: 800; font-size: 15px; text-transform: uppercase; }
+    tr.rank-1-row { background: rgba(250, 204, 21, 0.18); font-weight: 600; }
+    tr.winner-highlight { background: rgba(34, 197, 94, 0.22); }
 
     .control-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #002e38; border-top: 2px solid rgba(255,255,255,0.15); padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
     .btn-next { background: #0284c7; color: #ffffff; border: none; padding: 12px 28px; border-radius: 8px; font-size: 16px; font-weight: 800; cursor: pointer; transition: all 0.2s; }
@@ -75,9 +71,8 @@
     let timerSec = 30;
     let isTimerRunning = false;
 
-    // Reliable JSONP Loader
     function callBackendJsonp(params, callback) {
-      const cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      const cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
       window[cbName] = function(data) {
         if (callback) callback(data);
         delete window[cbName];
@@ -118,7 +113,7 @@
       { type: "QUESTION", num: "20 / 20", question: "Cutaneous side effects associated with Terbinafine are:", options: ["Lupus-like reaction", "Symmetrical drug-related intertriginous and flexural exanthema (SDRIFE)", "Pityriasis Rosea-like rash", "All of the above"] },
       { type: "ANSWER_KEY" },
       { type: "LEADERBOARD" },
-      { type: "TIE_BREAKER", question: "Which are the novel composition of Silver available, which can be used as an adjuvant to antifungal in the management of recalcitrant dermatophytosis?[cite: 1]", options: ["Silversol, Vitamin E, Hyaluronic acid & Coconut oil", "Silversol, Hyaluronic acid & Coconut oil", "Silversol, Vitamin E & Coconut oil", "Silversol, Vitamin E & Hyaluronic acid"] },
+      { type: "TIE_BREAKER", question: "Which are the novel composition of Silver available, which can be used as an adjuvant to antifungal in the management of recalcitrant dermatophytosis?", options: ["Silversol, Vitamin E, Hyaluronic acid & Coconut oil", "Silversol, Hyaluronic acid & Coconut oil", "Silversol, Vitamin E & Coconut oil", "Silversol, Vitamin E & Hyaluronic acid"] },
       { type: "TB_RESULTS" },
       { type: "THANK_YOU" }
     ];
@@ -210,11 +205,11 @@
         nextBtn.disabled = false;
         nextBtn.innerText = "Next ▶";
         stage.innerHTML = `
-          <h1 style="font-size:36px; margin-bottom:6px; color:#38bdf8;">Leaderboard & Rankings</h1>
+          <h1 style="font-size:36px; margin-bottom:6px; color:#38bdf8;">Leaderboard &amp; Rankings</h1>
           <p style="color:#cbd5e1; margin-bottom: 12px;">Evaluated scores of all participants (Highest rank first)</p>
           <div class="table-container">
             <table class="leader-table">
-              <thead><tr><th style="width:70px;">Rank</th><th>Doctor Name</th><th>Clinic / Place</th><th style="width:90px;">Score</th><th style="width:140px;">Tie-Breaker</th></tr></thead>
+              <thead><tr><th style="width:90px;">Rank</th><th>Doctor Name</th><th>Clinic / Place</th><th style="width:110px;">Score</th><th style="width:160px;">Tie-Breaker</th></tr></thead>
               <tbody id="leader-table-body"><tr><td colspan="5" style="text-align:center; padding: 24px;">Loading participants...</td></tr></tbody>
             </table>
           </div>
@@ -246,9 +241,14 @@
         nextBtn.disabled = false;
         nextBtn.innerText = "Next ▶";
         stage.innerHTML = `
-          <h1 style="font-size:36px; margin-bottom:6px; color:#facc15;">Tie-Breaker Results</h1>
-          <p style="color:#cbd5e1;">Evaluated outcome based on correctness & fastest speed</p>
-          <div id="tb-results-area" class="tb-result-grid">Loading tie-breaker submissions...</div>
+          <h1 style="font-size:36px; margin-bottom:6px; color:#facc15;">Tie-Breaker Standings</h1>
+          <p style="color:#cbd5e1; margin-bottom: 12px;">Evaluated outcome based on correctness &amp; fastest response time</p>
+          <div class="table-container">
+            <table class="leader-table">
+              <thead><tr><th style="width:90px;">Rank</th><th>Doctor Name</th><th>Clinic / Place</th><th style="width:110px;">Selected</th><th style="width:140px;">Speed</th><th style="width:130px;">Result</th></tr></thead>
+              <tbody id="tb-table-body"><tr><td colspan="6" style="text-align:center; padding: 24px;">Loading tie-breaker participants...</td></tr></tbody>
+            </table>
+          </div>
         `;
         fetchTieBreakerResults();
       } else if (s.type === "THANK_YOU") {
@@ -336,32 +336,32 @@
 
     function fetchTieBreakerResults() {
       callBackendJsonp(`action=getLeaderboard`, function(res) {
-        const area = document.getElementById('tb-results-area');
-        if (!area) return;
-        area.innerHTML = '';
+        const tbody = document.getElementById('tb-table-body');
+        if (!tbody) return;
+        tbody.innerHTML = '';
         const list = (res && res.participants) ? res.participants : [];
 
         const tbCandidates = list.filter(p => p.tbTimeSec !== null || p.tbAnswer !== '');
 
         if (tbCandidates.length === 0) {
-          area.innerHTML = `<p style="grid-column: 1/-1; color:#cbd5e1; font-size:18px;">No tie-breaker submissions recorded.</p>`;
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 24px;">No tie-breaker submissions recorded.</td></tr>';
           return;
         }
 
         tbCandidates.forEach((p, idx) => {
           const isWinner = (idx === 0 && p.tbCorrect);
-          const card = document.createElement('div');
-          card.className = `tb-card ${isWinner ? 'tb-winner' : ''}`;
-          card.innerHTML = `
-            <div style="font-size:36px; margin-bottom:6px;">${isWinner ? '🏆' : '🎯'}</div>
-            <h2 style="font-size:24px; font-weight:800; color:#fff;">${p.name}</h2>
-            <p style="font-size:14px; color:#cbd5e1; margin-bottom:12px;">${p.clinic || p.place}</p>
-            <div style="font-size:18px; font-weight:700; margin-bottom:6px;">Option Selected: <span style="color:#facc15;">${p.tbAnswer || 'Unattempted'}</span></div>
-            <div style="font-size:16px; margin-bottom:6px;">Time Taken: <strong>${p.tbTimeSec !== null ? p.tbTimeSec + 's' : '-'}</strong></div>
-            <div style="font-size:16px; font-weight:700; color:${p.tbCorrect ? '#4ade80' : '#f87171'};">${p.tbCorrect ? '✔ Correct Answer' : '✖ Incorrect Answer'}</div>
-            ${isWinner ? '<div style="margin-top:10px; font-weight:800; color:#facc15; font-size:18px;">★ 1st Place Winner ★</div>' : ''}
+          const tr = document.createElement('tr');
+          if (isWinner) tr.className = 'winner-highlight';
+
+          tr.innerHTML = `
+            <td style="font-weight:800; color:${isWinner ? '#facc15' : '#fff'};">${isWinner ? '🏆 #1' : '#' + (idx + 1)}</td>
+            <td><strong>${p.name}</strong> ${isWinner ? '★ 1st Place Champion' : ''}</td>
+            <td>${p.clinic} (${p.place})</td>
+            <td style="font-weight:800; color:#facc15;">Option ${p.tbAnswer || '-'}</td>
+            <td style="font-weight:700;">${p.tbTimeSec !== null ? p.tbTimeSec + 's' : '-'}</td>
+            <td style="font-weight:800; color:${p.tbCorrect ? '#4ade80' : '#f87171'};">${p.tbCorrect ? '✔ Correct' : '✖ Wrong'}</td>
           `;
-          area.appendChild(card);
+          tbody.appendChild(tr);
         });
       });
     }
