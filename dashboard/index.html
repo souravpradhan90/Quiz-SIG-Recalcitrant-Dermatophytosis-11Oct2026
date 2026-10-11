@@ -34,22 +34,16 @@
     .key-table th, .key-table td { padding: 8px 12px; border: 1px solid rgba(255,255,255,0.15); text-align: left; }
     .key-table th { background: rgba(255,255,255,0.15); color: #facc15; font-weight: 700; }
 
-    .podium-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin: 20px 0; }
-    .podium-card { background: rgba(0,0,0,0.3); border-radius: 16px; padding: 22px; border: 3px solid transparent; }
-    .p-rank-1 { border-color: #facc15; background: rgba(250, 204, 21, 0.15); }
-    .p-rank-2 { border-color: #cbd5e1; }
-    .p-rank-3 { border-color: #d97706; }
-    .podium-crown { font-size: 38px; margin-bottom: 4px; }
-    .podium-score { font-size: 22px; font-weight: 800; color: #38bdf8; margin-top: 6px; }
+    /* Full Participants Table - No top 3 cards */
+    .table-container { max-height: 440px; overflow-y: auto; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); margin-top: 20px; }
+    table.leader-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 16px; }
+    table.leader-table th, table.leader-table td { padding: 12px 18px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    table.leader-table th { background: rgba(0,0,0,0.5); color: #67e8f9; position: sticky; top: 0; font-weight: 800; }
+    tr.rank-1-row { background: rgba(250, 204, 21, 0.15); }
 
-    .table-container { max-height: 240px; overflow-y: auto; background: rgba(0,0,0,0.25); border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); margin-top: 16px; }
-    table.leader-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-    table.leader-table th, table.leader-table td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-    table.leader-table th { background: rgba(0,0,0,0.4); color: #cbd5e1; position: sticky; top: 0; }
-
-    /* Tie-breaker results styling */
+    /* Tie-breaker results grid */
     .tb-result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; margin-top: 24px; }
-    .tb-card { background: rgba(0,0,0,0.35); border-radius: 14px; padding: 20px; border: 2px solid #ea580c; text-align: center; }
+    .tb-card { background: rgba(0,0,0,0.35); border-radius: 14px; padding: 22px; border: 2px solid #ea580c; text-align: center; }
     .tb-winner { border-color: #facc15; background: rgba(250, 204, 21, 0.2); }
 
     .control-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #002e38; border-top: 2px solid rgba(255,255,255,0.15); padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
@@ -81,19 +75,19 @@
     let timerSec = 30;
     let isTimerRunning = false;
 
-    function callBackendJsonp(params, callbackName) {
-      const script = document.createElement('script');
-      const cb = callbackName || ('cb_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
-      
-      if (!callbackName) {
-        window[cb] = function() {
-          delete window[cb];
-          if (script.parentNode) script.parentNode.removeChild(script);
-        };
-      }
+    // Reliable JSONP Loader
+    function callBackendJsonp(params, callback) {
+      const cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      window[cbName] = function(data) {
+        if (callback) callback(data);
+        delete window[cbName];
+        if (script.parentNode) script.parentNode.removeChild(script);
+      };
 
-      script.src = `${SCRIPT_URL}?${params}&callback=${cb}&_t=${Date.now()}`;
+      const script = document.createElement('script');
+      script.src = `${SCRIPT_URL}?${params}&callback=${cbName}&_t=${Date.now()}`;
       script.onerror = function() {
+        delete window[cbName];
         if (script.parentNode) script.parentNode.removeChild(script);
       };
       document.body.appendChild(script);
@@ -216,13 +210,12 @@
         nextBtn.disabled = false;
         nextBtn.innerText = "Next ▶";
         stage.innerHTML = `
-          <h1 style="font-size:36px; margin-bottom:6px; color:#38bdf8;">Leaderboard & Podium</h1>
-          <p style="color:#cbd5e1;">Evaluated standings of all participants</p>
-          <div id="podium-area" class="podium-grid">Loading final scores...</div>
+          <h1 style="font-size:36px; margin-bottom:6px; color:#38bdf8;">Leaderboard & Rankings</h1>
+          <p style="color:#cbd5e1; margin-bottom: 12px;">Evaluated scores of all participants (Highest rank first)</p>
           <div class="table-container">
             <table class="leader-table">
-              <thead><tr><th>Rank</th><th>Doctor Name</th><th>Clinic / Place</th><th>Score</th><th>Tie-Breaker Speed</th></tr></thead>
-              <tbody id="leader-table-body"><tr><td colspan="5" style="text-align:center;">Loading participants...</td></tr></tbody>
+              <thead><tr><th style="width:70px;">Rank</th><th>Doctor Name</th><th>Clinic / Place</th><th style="width:90px;">Score</th><th style="width:140px;">Tie-Breaker</th></tr></thead>
+              <tbody id="leader-table-body"><tr><td colspan="5" style="text-align:center; padding: 24px;">Loading participants...</td></tr></tbody>
             </table>
           </div>
         `;
@@ -254,7 +247,7 @@
         nextBtn.innerText = "Next ▶";
         stage.innerHTML = `
           <h1 style="font-size:36px; margin-bottom:6px; color:#facc15;">Tie-Breaker Results</h1>
-          <p style="color:#cbd5e1;">Final outcome of the Rank 1 tie-breaker round</p>
+          <p style="color:#cbd5e1;">Evaluated outcome based on correctness & fastest speed</p>
           <div id="tb-results-area" class="tb-result-grid">Loading tie-breaker submissions...</div>
         `;
         fetchTieBreakerResults();
@@ -310,60 +303,44 @@
     }
 
     function fetchLeaderboard() {
-      const cbName = 'renderLeaderboardData_' + Date.now();
-      window[cbName] = function(res) {
-        delete window[cbName];
-        const area = document.getElementById('podium-area');
+      callBackendJsonp(`action=getLeaderboard`, function(res) {
         const tbody = document.getElementById('leader-table-body');
-        if (!area || !tbody) return;
-        area.innerHTML = '';
+        if (!tbody) return;
         tbody.innerHTML = '';
-        const list = res.participants || [];
+        const list = (res && res.participants) ? res.participants : [];
 
-        for (let i = 0; i < Math.min(3, list.length); i++) {
-          const p = list[i];
-          const crown = p.rank === 1 ? '👑' : (p.rank === 2 ? '🥈' : '🥉');
-          const card = document.createElement('div');
-          card.className = `podium-card p-rank-${p.rank}`;
-          const tbSpeed = p.tbTimeSec !== null ? `<div style="font-size:13px; color:#facc15; margin-top:6px;">TB: ${p.tbTimeSec}s (${p.tbCorrect ? '✔' : '✖'})</div>` : '';
-          card.innerHTML = `
-            <div class="podium-crown">${crown}</div>
-            <h2 style="font-size:22px;">Rank #${p.rank}</h2>
-            <p style="font-size:18px; font-weight:700; margin-top:4px;">${p.name}</p>
-            <p style="font-size:13px; color:#cbd5e1;">${p.clinic || p.place}</p>
-            <div class="podium-score">${p.score} pts</div>
-            ${tbSpeed}
-          `;
-          area.appendChild(card);
+        if (list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 24px;">No participants recorded.</td></tr>';
+          return;
         }
 
         list.forEach(p => {
           const tr = document.createElement('tr');
-          const tbStr = p.tbTimeSec !== null ? `${p.tbTimeSec}s (${p.tbCorrect ? '✔' : '✖'})` : '-';
+          if (p.rank === 1) tr.className = 'rank-1-row';
+
+          const tbStr = p.tbTimeSec !== null 
+            ? `${p.tbTimeSec}s (${p.tbCorrect ? '✔' : '✖'})`
+            : '-';
+
           tr.innerHTML = `
-            <td style="font-weight:700;">#${p.rank}</td>
-            <td><strong>${p.name}</strong></td>
+            <td style="font-weight:800; color:${p.rank === 1 ? '#facc15' : '#fff'};">#${p.rank}</td>
+            <td><strong>${p.name}</strong> ${p.rank === 1 ? '👑' : ''}</td>
             <td>${p.clinic} (${p.place})</td>
-            <td style="font-weight:700; color:#38bdf8;">${p.score}</td>
+            <td style="font-weight:800; color:#38bdf8;">${p.score}</td>
             <td>${tbStr}</td>
           `;
           tbody.appendChild(tr);
         });
-      };
-
-      callBackendJsonp(`action=getLeaderboard`, cbName);
+      });
     }
 
     function fetchTieBreakerResults() {
-      const cbName = 'renderTbData_' + Date.now();
-      window[cbName] = function(res) {
-        delete window[cbName];
+      callBackendJsonp(`action=getLeaderboard`, function(res) {
         const area = document.getElementById('tb-results-area');
         if (!area) return;
         area.innerHTML = '';
-        const list = res.participants || [];
+        const list = (res && res.participants) ? res.participants : [];
 
-        // Filter participants who answered the tie breaker
         const tbCandidates = list.filter(p => p.tbTimeSec !== null || p.tbAnswer !== '');
 
         if (tbCandidates.length === 0) {
@@ -382,13 +359,11 @@
             <div style="font-size:18px; font-weight:700; margin-bottom:6px;">Option Selected: <span style="color:#facc15;">${p.tbAnswer || 'Unattempted'}</span></div>
             <div style="font-size:16px; margin-bottom:6px;">Time Taken: <strong>${p.tbTimeSec !== null ? p.tbTimeSec + 's' : '-'}</strong></div>
             <div style="font-size:16px; font-weight:700; color:${p.tbCorrect ? '#4ade80' : '#f87171'};">${p.tbCorrect ? '✔ Correct Answer' : '✖ Incorrect Answer'}</div>
-            ${isWinner ? '<div style="margin-top:10px; font-weight:800; color:#facc15; font-size:18px;">★ 1st Place Champion ★</div>' : ''}
+            ${isWinner ? '<div style="margin-top:10px; font-weight:800; color:#facc15; font-size:18px;">★ 1st Place Winner ★</div>' : ''}
           `;
           area.appendChild(card);
         });
-      };
-
-      callBackendJsonp(`action=getLeaderboard`, cbName);
+      });
     }
 
     window.addEventListener('keydown', (e) => {
