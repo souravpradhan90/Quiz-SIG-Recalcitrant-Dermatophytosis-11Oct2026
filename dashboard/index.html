@@ -42,9 +42,9 @@
     tr.winner-highlight { background: rgba(34, 197, 94, 0.22); font-weight: 700; }
 
     .control-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #002e38; border-top: 2px solid rgba(255,255,255,0.15); padding: 14px 28px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
-    .btn-next { background: #0284c7; color: #ffffff; border: none; padding: 12px 28px; border-radius: 8px; font-size: 16px; font-weight: 800; cursor: pointer; transition: all 0.2s; }
-    .btn-next:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; }
-    .btn-open { background: #16a34a; color: #ffffff; border: none; padding: 12px 28px; border-radius: 8px; font-size: 18px; font-weight: 800; cursor: pointer; }
+    .btn-nav { background: #0284c7; color: #ffffff; border: none; padding: 12px 28px; border-radius: 8px; font-size: 16px; font-weight: 800; cursor: pointer; transition: all 0.2s; }
+    .btn-nav:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; }
+    .btn-open { background: #ea580c; color: #ffffff; border: none; padding: 12px 28px; border-radius: 8px; font-size: 18px; font-weight: 800; cursor: pointer; }
     .btn-open:disabled { background: #64748b; cursor: not-allowed; }
   </style>
 </head>
@@ -56,19 +56,20 @@
 
   <div class="control-bar">
     <div style="font-size:15px; color:#cbd5e1; font-weight:600;" id="slide-indicator">Slide 1 of 27</div>
-    <div style="display:flex; align-items:center; gap: 16px;">
-      <button class="btn-open" id="open-btn" onclick="openAnsweringWindow()">▶ Open for Answers (30s)</button>
-      <button class="btn-next" id="next-btn" onclick="nextSlide()">Next ▶</button>
+    <div style="display:flex; align-items:center; gap: 14px;">
+      <button class="btn-nav" id="prev-btn" onclick="prevSlide()">◀ Prev</button>
+      <button class="btn-open" id="open-btn" style="display:none;" onclick="openTieBreakerWindow()">⚡ Open Tie-Breaker (30s)</button>
+      <button class="btn-nav" id="next-btn" onclick="nextSlide()">Next ▶</button>
     </div>
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_p1n14N5lQ94zT39V60Z6i1lM_D-Z0U/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyTkZJGb6_4sDJP4RKmoyqVkonvSy7pZFIMA5fXliEZY5UVd-pbKq0suK8Tc4RtfAtJ/exec";
 
     let currentSlide = 0;
-    let localTimer = null;
-    let timerSec = 30;
-    let isTimerRunning = false;
+    let tbTimer = null;
+    let tbSec = 30;
+    let isTbRunning = false;
 
     function callBackendJsonp(params, callback) {
       const cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
@@ -118,19 +119,21 @@
     ];
 
     function renderSlide(index) {
-      clearInterval(localTimer);
-      isTimerRunning = false;
+      clearInterval(tbTimer);
+      isTbRunning = false;
       const stage = document.getElementById('slide-stage');
       const openBtn = document.getElementById('open-btn');
+      const prevBtn = document.getElementById('prev-btn');
       const nextBtn = document.getElementById('next-btn');
       const s = SLIDES[index];
 
       document.getElementById('slide-indicator').innerText = `Slide ${index + 1} of ${SLIDES.length}`;
+      prevBtn.disabled = (index === 0);
+      nextBtn.disabled = false;
+      nextBtn.innerText = "Next ▶";
+      openBtn.style.display = 'none';
 
       if (s.type === "TITLE") {
-        openBtn.style.display = 'none';
-        nextBtn.disabled = false;
-        nextBtn.innerText = "Next ▶";
         stage.innerHTML = `
           <div class="top-meta">QUIZ</div>
           <h1 class="main-title" style="white-space: pre-line;">${s.title}</h1>
@@ -138,16 +141,13 @@
           <p style="font-size:16px; color:#94a3b8; margin-top:8px;">DATE: ${s.date}</p>
         `;
       } else if (s.type === "RULES") {
-        openBtn.style.display = 'none';
-        nextBtn.disabled = false;
-        nextBtn.innerText = "Next ▶";
         stage.innerHTML = `
           <h1 style="font-size:36px; margin-bottom:20px;">How the quiz works</h1>
           <div class="rules-card">
             <div class="rule-row"><span>1 correct answer per question</span></div>
             <div class="rule-row"><span>+4 points for a correct answer</span></div>
             <div class="rule-row"><span>−1 point for a wrong answer</span></div>
-            <div class="rule-row"><span>30 s to answer each question</span></div>
+            <div class="rule-row"><span>Self-paced: proceed when ready</span></div>
           </div>
           <div style="margin-top:24px;">
             <p style="font-size:16px; color:#67e8f9; margin-bottom:10px;">Scan to Join: quiz.samvedi.com/derma/</p>
@@ -155,18 +155,10 @@
           </div>
         `;
       } else if (s.type === "QUESTION") {
-        openBtn.style.display = 'inline-block';
-        openBtn.disabled = false;
-        openBtn.innerText = "▶ Open for Answers (30s)";
-
-        nextBtn.disabled = true;
-        nextBtn.innerText = "Locked (Timer Required)";
-
         const media = s.image ? `<div class="media-box"><img src="${s.image}"></div>` : '';
         stage.innerHTML = `
           <div class="q-header">
             <span class="q-num">QUESTION ${s.num}</span>
-            <span class="q-timer-badge" id="screen-timer">30s</span>
           </div>
           <div class="q-text">${s.question}</div>
           ${media}
@@ -178,9 +170,6 @@
           </div>
         `;
       } else if (s.type === "ANSWER_KEY") {
-        openBtn.style.display = 'none';
-        nextBtn.disabled = false;
-        nextBtn.innerText = "Next ▶";
         stage.innerHTML = `
           <h1 style="font-size:32px; margin-bottom:14px; color:#facc15;">Answer key</h1>
           <table class="key-table">
@@ -200,9 +189,6 @@
           </table>
         `;
       } else if (s.type === "LEADERBOARD") {
-        openBtn.style.display = 'none';
-        nextBtn.disabled = false;
-        nextBtn.innerText = "Next ▶";
         stage.innerHTML = `
           <h1 style="font-size:36px; margin-bottom:6px; color:#38bdf8;">Leaderboard &amp; Rankings</h1>
           <p style="color:#cbd5e1; margin-bottom: 12px;">Official verified scores of all participants (Highest rank first)</p>
@@ -236,9 +222,6 @@
           </div>
         `;
       } else if (s.type === "TB_RESULTS") {
-        openBtn.style.display = 'none';
-        nextBtn.disabled = false;
-        nextBtn.innerText = "Next ▶";
         stage.innerHTML = `
           <h1 style="font-size:36px; margin-bottom:6px; color:#facc15;">Tie-Breaker Standings</h1>
           <p style="color:#cbd5e1; margin-bottom: 12px;">Evaluated outcome based on correctness &amp; fastest response time</p>
@@ -251,7 +234,6 @@
         `;
         fetchTieBreakerResults();
       } else if (s.type === "THANK_YOU") {
-        openBtn.style.display = 'none';
         nextBtn.disabled = true;
         nextBtn.innerText = "End of Session";
         stage.innerHTML = `
@@ -264,28 +246,28 @@
       callBackendJsonp(`action=setSlide&index=${index}`);
     }
 
-    function openAnsweringWindow() {
+    function openTieBreakerWindow() {
       const openBtn = document.getElementById('open-btn');
       const nextBtn = document.getElementById('next-btn');
       openBtn.disabled = true;
-      openBtn.innerText = "Answering Open...";
-      timerSec = 30;
-      isTimerRunning = true;
+      openBtn.innerText = "Tie-Breaker Open...";
+      tbSec = 30;
+      isTbRunning = true;
 
       nextBtn.disabled = true;
-      nextBtn.innerText = `Wait for Timer (${timerSec}s)`;
+      nextBtn.innerText = `Wait for Timer (${tbSec}s)`;
 
       callBackendJsonp(`action=startAnswering&index=${currentSlide}`);
 
-      localTimer = setInterval(() => {
-        timerSec--;
+      tbTimer = setInterval(() => {
+        tbSec--;
         const badge = document.getElementById('screen-timer');
-        if (badge) badge.innerText = `${timerSec}s`;
-        if (nextBtn) nextBtn.innerText = `Wait for Timer (${timerSec}s)`;
+        if (badge) badge.innerText = `${tbSec}s`;
+        if (nextBtn) nextBtn.innerText = `Wait for Timer (${tbSec}s)`;
 
-        if (timerSec <= 0) {
-          clearInterval(localTimer);
-          isTimerRunning = false;
+        if (tbSec <= 0) {
+          clearInterval(tbTimer);
+          isTbRunning = false;
           openBtn.innerText = "Time Expired";
           nextBtn.disabled = false;
           nextBtn.innerText = "Next ▶";
@@ -294,9 +276,17 @@
     }
 
     function nextSlide() {
-      if (isTimerRunning) return;
+      if (isTbRunning) return;
       if (currentSlide < SLIDES.length - 1) {
         currentSlide++;
+        renderSlide(currentSlide);
+      }
+    }
+
+    function prevSlide() {
+      if (isTbRunning) return;
+      if (currentSlide > 0) {
+        currentSlide--;
         renderSlide(currentSlide);
       }
     }
@@ -384,11 +374,16 @@
     window.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowRight' || e.key === 'PageDown') {
         const nextBtn = document.getElementById('next-btn');
-        if (nextBtn && !nextBtn.disabled && !isTimerRunning) {
+        if (nextBtn && !nextBtn.disabled && !isTbRunning) {
           nextSlide();
         }
-      } else if (e.key === ' ' && !document.getElementById('open-btn').disabled) {
-        openAnsweringWindow();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        const prevBtn = document.getElementById('prev-btn');
+        if (prevBtn && !prevBtn.disabled && !isTbRunning) {
+          prevSlide();
+        }
+      } else if (e.key === ' ' && !document.getElementById('open-btn').disabled && currentSlide === 24) {
+        openTieBreakerWindow();
       }
     });
 
